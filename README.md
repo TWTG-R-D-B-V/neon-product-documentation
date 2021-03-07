@@ -4,7 +4,7 @@ In this repository all product documentation form the TWTG NEON product line can
 
 The documentation is grouped per product type:
 
-- [Quarter Turn Valve Sensor (VS-QT)](vs-qt) 
-- [Multi Turn Valve Sensor (VS-MT)](vs-mt) 
-- [Temperature Sensor (TS)](ts) 
-- [Temperature Transmitter (TT)](tt) 
+- [Quarter Turn Valve Sensor (VS-QT)](VS-QT) 
+- [Multi Turn Valve Sensor (VS-MT)](VS-MT) 
+- [Temperature Sensor (TS)](TS) 
+- [Temperature Transmitter (TT)](TT) 
