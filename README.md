@@ -8,3 +8,4 @@ The documentation is grouped per product type:
 - [Multi Turn Valve Sensor (VS-MT)](VS-MT) 
 - [Temperature Sensor (TS)](TS) 
 - [Temperature Transmitter (TT)](TT) 
+- [Vibration Sensor (VB)](VB) 
