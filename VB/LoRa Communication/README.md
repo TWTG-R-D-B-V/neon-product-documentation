@@ -42,7 +42,7 @@ JSON:
 {
     "header": {
         "message_type": "base_configuration",
-        "protocol_version": 1
+        "protocol_version": 2
     },
     "switch_mask": {
         "enable_confirmed_event_message": true,
@@ -67,11 +67,11 @@ JSON:
 ```
 Bytestring (hexidecimal):
 ```
-150903013ca00501020100000000000000000000d513
+250903013ca00501020100000000000000000000d513
 ```
 Bytestring (base64):
 ```
-FQkDATygBQECAQAAAAAAAAAAAADVEw==
+JQkDATygBQECAQAAAAAAAAAAAADVEw==
 ```
 ###### Base config message (US915)
 JSON:
@@ -79,7 +79,7 @@ JSON:
 {
     "header": {
         "message_type": "base_configuration",
-        "protocol_version": 1
+        "protocol_version": 2
     },
     "switch_mask": {
         "enable_confirmed_event_message": true,
@@ -104,11 +104,11 @@ JSON:
 ```
 Bytestring (hexidecimal):
 ```
-150903013ca005010201ff000000000000000000c1c4
+250903013ca005010201ff000000000000000000c1c4
 ```
 Bytestring (base64):
 ```
-FQkDATygBQECAf8AAAAAAAAAAADBxA==
+JQkDATygBQECAf8AAAAAAAAAAADBxA==
 ```
 ###### Sensor config message (default)
 JSON:
@@ -116,7 +116,7 @@ JSON:
 {
     "header": {
         "message_type": "sensor_configuration",
-        "protocol_version": 1
+        "protocol_version": 2
     },
     "device_type": "vb",
     "measurement_interval_seconds": 900,
@@ -155,11 +155,11 @@ JSON:
 ```
 Bytestring (hexidecimal):
 ```
-1606840310000300000000000000000000000000000000000079cd
+2606840310000300000000000000000000000000000000000079cd
 ```
 Bytestring (base64):
 ```
-FgaEAxAAAwAAAAAAAAAAAAAAAAAAAAAAAHnN
+JgaEAxAAAwAAAAAAAAAAAAAAAAAAAAAAAHnN
 ```
 ###### Sensor config message (alternative)
 JSON:
@@ -167,7 +167,7 @@ JSON:
 {
     "header": {
         "message_type": "sensor_configuration",
-        "protocol_version": 1
+        "protocol_version": 2
     },
     "device_type": "vb",
     "measurement_interval_seconds": 3600,
@@ -206,11 +206,11 @@ JSON:
 ```
 Bytestring (hexidecimal):
 ```
-1606100e010001010500030f2706010002204e0000000000001e69
+2606100e010001010500030f2706010002204e0000000000001e69
 ```
 Bytestring (base64):
 ```
-FgYQDgEAAQEFAAMPJwYBAAIgTgAAAAAAAB5p
+JgYQDgEAAQEFAAMPJwYBAAIgTgAAAAAAAB5p
 ```
 ###### Sensor data config message (default)
 JSON:
@@ -218,7 +218,7 @@ JSON:
 {
     "header": {
         "message_type": "sensor_data_configuration",
-        "protocol_version": 1
+        "protocol_version": 2
     },
     "device_type": "vb",
     "calculation_trigger": {
@@ -285,11 +285,11 @@ JSON:
 ```
 Bytestring (hexidecimal):
 ```
-170600000040380500000000000000000000000000000000000000000a03007e003d0000100102010a1de5
+270600000040380500000000000000000000000000000000000000000a03007e003d000010010224345128
 ```
 Bytestring (base64):
 ```
-FwYAAABAOAUAAAAAAAAAAAAAAAAAAAAAAAAAAAoDAH4APQAAEAECAQod5Q==
+JwYAAABAOAUAAAAAAAAAAAAAAAAAAAAAAAAAAAoDAH4APQAAEAECJDRRKA==
 ```
 ###### Sensor data config message (alternative)
 JSON:
@@ -297,7 +297,7 @@ JSON:
 {
     "header": {
         "message_type": "sensor_data_configuration",
-        "protocol_version": 1
+        "protocol_version": 2
     },
     "device_type": "vb",
     "calculation_trigger": {
@@ -364,11 +364,11 @@ JSON:
 ```
 Bytestring (hexidecimal):
 ```
-1706060000403805c800204ec900851a411f393000000000000000000a03007e003d0000100102010a6923
+2706060000403805c800204ec900851a411f393000000000000000000a03007e003d0000100102243425ee
 ```
 Bytestring (base64):
 ```
-FwYGAABAOAXIACBOyQCFGkEfOTAAAAAAAAAAAAoDAH4APQAAEAECAQppIw==
+JwYGAABAOAXIACBOyQCFGkEfOTAAAAAAAAAAAAoDAH4APQAAEAECJDQl7g==
 ```
 ##### Decoding
 
@@ -380,13 +380,13 @@ nodejs examples/decoder-vb-examples.js
 ###### Boot message
 Bytestring (hexidecimal):
 ```
-10050df0ad8b34120c030344332211ffffffffff060102030405dec0edfebbaa55440a04040807060504030201ee
+20050df0ad8b34120c030344332211ffffffffff060102030405dec0edfebbaa55440a04040807060504030201ee
 ```
 JSON:
 ```json
 {
     "header": {
-        "protocol_version": 1,
+        "protocol_version": 2,
         "message_type": "boot"
     },
     "boot": {
@@ -416,13 +416,13 @@ JSON:
 ###### Activated message
 Bytestring (hexidecimal):
 ```
-11060801020304
+21060801020304
 ```
 JSON:
 ```json
 {
     "header": {
-        "protocol_version": 1,
+        "protocol_version": 2,
         "message_type": "activated"
     },
     "activated": {
@@ -436,13 +436,13 @@ JSON:
 ###### Deactivated message
 Bytestring (hexidecimal):
 ```
-120200
+220200
 ```
 JSON:
 ```json
 {
     "header": {
-        "protocol_version": 1,
+        "protocol_version": 2,
         "message_type": "deactivated"
     },
     "deactivated": {
@@ -453,13 +453,13 @@ JSON:
 ###### Device status message (pattern)
 Bytestring (hexidecimal):
 ```
-14edfe0b000c000d00151617020304050606dec037130107
+24edfe0b000c000d00151617020304050606dec037130107
 ```
 JSON:
 ```json
 {
     "header": {
-        "protocol_version": 1,
+        "protocol_version": 2,
         "message_type": "device_status"
     },
     "device_status": {
@@ -494,13 +494,13 @@ JSON:
 ###### Application event message
 Bytestring (hexidecimal):
 ```
-13010100d20488130200d30487130300d40486130400d50485130500d60484130600d704831361f0d204401f15
+23010100d20488130200d30487130300d40486130400d50485130500d60484130600d704831361f0d204401f15
 ```
 JSON:
 ```json
 {
     "header": {
-        "protocol_version": 1,
+        "protocol_version": 2,
         "message_type": "sensor_event"
     },
     "sensor_event": {
@@ -556,13 +556,13 @@ JSON:
 ###### Application data message
 Bytestring (hexidecimal):
 ```
-182b994006020102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728
+282bf94506020102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728
 ```
 JSON:
 ```json
 {
     "header": {
-        "protocol_version": 1,
+        "protocol_version": 2,
         "message_type": "sensor_data"
     },
     "sensor_data": {
@@ -571,7 +571,7 @@ JSON:
             "sequence_number": 1,
             "axis": "z",
             "unit": "acceleration",
-            "scale": 16,
+            "scale": 15,
             "start_frequency": 200,
             "spectral_line_frequency": 2
         },
@@ -660,46 +660,46 @@ JSON:
             6051.4911600000005
         ],
         "magnitude": [
-            0.06274509803921569,
-            0.12549019607843137,
-            0.18823529411764706,
-            0.25098039215686274,
-            0.3137254901960784,
-            0.3764705882352941,
-            0.4392156862745098,
-            0.5019607843137255,
-            0.5647058823529412,
-            0.6274509803921569,
-            0.6901960784313725,
-            0.7529411764705882,
-            0.8156862745098039,
-            0.8784313725490196,
+            0.058823529411764705,
+            0.11764705882352941,
+            0.17647058823529413,
+            0.23529411764705882,
+            0.29411764705882354,
+            0.35294117647058826,
+            0.4117647058823529,
+            0.47058823529411764,
+            0.5294117647058824,
+            0.5882352941176471,
+            0.6470588235294118,
+            0.7058823529411765,
+            0.7647058823529411,
+            0.8235294117647058,
+            0.8823529411764706,
             0.9411764705882353,
-            1.003921568627451,
-            1.0666666666666667,
-            1.1294117647058823,
-            1.192156862745098,
-            1.2549019607843137,
-            1.3176470588235294,
-            1.380392156862745,
-            1.4431372549019608,
-            1.5058823529411764,
-            1.5686274509803921,
-            1.6313725490196078,
-            1.6941176470588235,
-            1.7568627450980392,
-            1.8196078431372549,
+            1,
+            1.0588235294117647,
+            1.1176470588235294,
+            1.1764705882352942,
+            1.2352941176470589,
+            1.2941176470588236,
+            1.3529411764705883,
+            1.411764705882353,
+            1.4705882352941178,
+            1.5294117647058822,
+            1.588235294117647,
+            1.6470588235294117,
+            1.7058823529411764,
+            1.7647058823529411,
+            1.8235294117647058,
             1.8823529411764706,
-            1.9450980392156862,
-            2.007843137254902,
-            2.070588235294118,
-            2.1333333333333333,
-            2.196078431372549,
-            2.2588235294117647,
-            2.3215686274509806,
-            2.384313725490196,
-            2.447058823529412,
-            2.5098039215686274
+            1.9411764705882353,
+            2,
+            2.0588235294117645,
+            2.1176470588235294,
+            2.176470588235294,
+            2.235294117647059,
+            2.2941176470588234,
+            2.3529411764705883
         ]
     }
 }
