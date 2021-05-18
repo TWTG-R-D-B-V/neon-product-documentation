@@ -19,10 +19,9 @@ This folder contains Javascript files can help with the conversion in for exampl
 
 The encoder/decoder script names are postfixed with version information: 
 
-	[encoder/decoder]_[type]_prot-[prot]_doc-[doc]_rev-[rev].js
+	[encoder/decoder]_[type]_doc-[doc]_rev-[rev].js
 
 - **type**: the sensor type abbreviation
-- **prot**: the protocol version number
 - **doc**: the communication protocol document version
 - **rev**: the revision number of improvements of the scripts
 

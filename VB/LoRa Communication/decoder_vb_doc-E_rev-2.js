@@ -1,6 +1,6 @@
 /**
- * Filename      : decoder_vb_prot-2_doc-E_rev-1.js
- * Latest commit : d31215d0
+ * Filename      : decoder_vb_doc-E_rev-2.js
+ * Latest commit : aaa27b8a
  *
  * Release History
  *
@@ -8,7 +8,11 @@
  * - initial version
  *
  * 2021-03-05 revision 1
- * - Uses scientific notation for sensor data scale
+ * - using scientific notation for sensor data scale
+ *
+ * 2021-05-14 revision 2
+ * - made it compatible with v1 and v2 (merged in protocol v1)
+ * - added DecodeHexString to directly decode from HEX string
  */
 
 if (typeof module !== 'undefined') {
@@ -16,6 +20,7 @@ if (typeof module !== 'undefined') {
   module.exports = {
     Decode: Decode,
     Decoder: Decoder,
+    DecodeHexString: DecodeHexString,
     DecodeRebootInfo: DecodeRebootInfo,
     decode_float: decode_float,
     decode_uint32: decode_uint32,
@@ -27,6 +32,7 @@ if (typeof module !== 'undefined') {
     decode_device_id: decode_device_id,
     decode_reboot_info: decode_reboot_info,
     decode_sensor_data_config: decode_sensor_data_config,
+    from_hex_string: from_hex_string
   };
 }
 
@@ -42,7 +48,8 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
   decoded.header.protocol_version = bytes[0] >> 4;
   message_type = bytes[0] & 0x0F;
 
-  var PROTOCOL_VERSION = 2;
+  var PROTOCOL_VERSION_V1 = 1;
+  var PROTOCOL_VERSION_V2 = 2;
 
   var MSGID_BOOT               = 0;
   var MSGID_ACTIVATED          = 1;
@@ -52,8 +59,10 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
   var MSGID_SENSOR_DATA        = 8;
 
   switch (decoded.header.protocol_version) {
-    case PROTOCOL_VERSION: { // protocol_version = 1
-      decoded.header.message_type = message_type_lookup(message_type);
+    case PROTOCOL_VERSION_V1:
+    case PROTOCOL_VERSION_V2:
+    {
+        decoded.header.message_type = message_type_lookup(message_type);
 
       var cursor = {};   // keeping track of which byte to process.
       cursor.value = 1;  // skip header that has been checked
@@ -85,7 +94,7 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
         }
 
         case MSGID_SENSOR_DATA: {
-          decoded.sensor_data = decode_sensor_data_msg(bytes, cursor);
+          decoded.sensor_data = decode_sensor_data_msg(bytes, cursor, decoded.header.protocol_version);
           break;
         }
 
@@ -120,9 +129,31 @@ function Decoder(obj, fPort) {
   return Decode(fPort, obj);
 }
 
+/**
+ * Decoder for plain HEX string
+ */
+ function DecodeHexString(hex_string) {
+  return Decode(15, from_hex_string(hex_string));
+}
+
 /******************
  * Helper functions
  */
+
+// helper function to convert a ASCII HEX string to a byte string
+ function from_hex_string(hex_string) {
+  if (typeof hex_string != "string") throw new Error("hex_string must be a string");
+  if (!hex_string.match(/^[0-9A-F]*$/gi)) throw new Error("hex_string contain only 0-9, A-F characters");
+  if (hex_string.length & 0x01 > 0) throw new Error("hex_string length must be a multiple of two");
+
+  var byte_string = [];
+  for (i = 0; i < hex_string.length; i += 2)
+  {
+      var hex = hex_string.slice(i, i + 2);
+      byte_string.push(parseInt(hex, 16));
+  }
+  return byte_string;
+}
 
 // pad zeros on decimal number
 function pad(num, size) {
@@ -236,9 +267,8 @@ function decode_device_id(bytes, cursor) {
 }
 
 // helper function to parse fft config in sensor_data
-function decode_sensor_data_config(bytes, cursor) {
+function decode_sensor_data_config(bytes, cursor, protocol_version) {
   config = decode_uint32(bytes, cursor);
-
   var result = {};
 
   // bits[0..7]
@@ -274,15 +304,29 @@ function decode_sensor_data_config(bytes, cursor) {
       break;
   }
 
-  // bits[13..16]
-  scale_coefficient = ((config >> 13) & 0x0F);
-  if (scale_coefficient < 1 || scale_coefficient > 15) {
-    throw "Invalid config.scale coefficient value!"
-  }
-  // bits[17..18]
-  scale_power = ((config >> 17) & 0x03) - 2;
-  result.scale = scale_coefficient  * Math.pow(10, scale_power);
+  switch (protocol_version) {
+    case 1:
+      // bits[13..18]
+      result.scale = ((config >> 13) & 0x3F) * 4;
+      if (result.scale == 0) {
+        throw "Invalid config.scale value!"
+      }
+      break;
 
+    case 2:
+      // bits[13..16]
+      var scale_coefficient = ((config >> 13) & 0x0F);
+      if (scale_coefficient < 1 || scale_coefficient > 15) {
+        throw "Invalid config.scale coefficient value!"
+      }
+      // bits[17..18]
+      var scale_power = ((config >> 17) & 0x03) - 2;
+      result.scale = scale_coefficient  * Math.pow(10, scale_power);
+      break;
+      
+    default:
+      throw "Unsupported protocol version!";
+  }
 
   // bits[19..31]
   result.start_frequency = config >>> 19;
@@ -721,7 +765,7 @@ function decode_device_status_msg(bytes, cursor) {
   return device_status;
 }
 
-function decode_sensor_data_msg(bytes, cursor) {
+function decode_sensor_data_msg(bytes, cursor, protocol_version) {
   var sensor_data = {};
 
   if (bytes.length != 46) {
@@ -729,7 +773,7 @@ function decode_sensor_data_msg(bytes, cursor) {
   }
 
   // byte[1..5]
-  sensor_data.config = decode_sensor_data_config(bytes, cursor);
+  sensor_data.config = decode_sensor_data_config(bytes, cursor, protocol_version);
 
   // byte[6..45]
   sensor_data.raw = [];

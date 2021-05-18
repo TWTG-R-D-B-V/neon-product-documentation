@@ -1,6 +1,6 @@
 /**
- * Filename      : encoder_vb_prot-2_doc-E_rev-1.js
- * Latest commit : 7b68a20c
+ * Filename      : encoder_vb_doc-E_rev-2.js
+ * Latest commit : 35af86ad
  *
  * Release History
  *
@@ -9,6 +9,9 @@
  *
  * 2021-03-05 revision 1
  * - Uses scientific notation for sensor data scale
+ *
+ * 2021-05-14 revision 2
+ * - Made it compatible with v1 and v2 (merged in protocol v1)
  */
 
 if (typeof module !== 'undefined') {
@@ -23,7 +26,8 @@ if (typeof module !== 'undefined') {
     encode_events_mode: encode_events_mode,
     encode_base_config: encode_base_config,
     encode_vb_sensor_config: encode_vb_sensor_config,
-    encode_vb_sensor_data_config: encode_vb_sensor_data_config,
+    encode_vb_sensor_data_config_v1: encode_vb_sensor_data_config_v1,
+    encode_vb_sensor_data_config_v2: encode_vb_sensor_data_config_v2,
     encode_calculation_trigger: encode_calculation_trigger,
     encode_fft_trigger_threshold: encode_fft_trigger_threshold,
     encode_fft_selection: encode_fft_selection,
@@ -49,14 +53,17 @@ function Encode(fPort, obj) { // Used for ChirpStack (aka LoRa Network Server)
   // object to an array or buffer of bytes.
   var bytes = [];
 
-  var PROTOCOL_VERSION = 2;
+  var PROTOCOL_VERSION_1 = 1;
+  var PROTOCOL_VERSION_2 = 2;
 
   var MSG_BASE_CONFIG         = 5;
   var MSG_SENSOR_CONFIG       = 6;
   var MSG_SENSOR_DATA_CONFIG  = 7;
 
   switch (obj.header.protocol_version) {
-    case PROTOCOL_VERSION: {
+    case PROTOCOL_VERSION_1:
+    case PROTOCOL_VERSION_2:
+    {
       switch (obj.header.message_type) {
         case "base_configuration": {
           encode_header(bytes, MSG_BASE_CONFIG, obj.header.protocol_version);
@@ -82,7 +89,16 @@ function Encode(fPort, obj) { // Used for ChirpStack (aka LoRa Network Server)
           switch (obj.device_type) {
             case "vb":
               encode_header(bytes, MSG_SENSOR_DATA_CONFIG, obj.header.protocol_version);
-              encode_vb_sensor_data_config(bytes, obj);
+              switch (obj.header.protocol_version) {
+                case PROTOCOL_VERSION_1:
+                  encode_vb_sensor_data_config_v1(bytes, obj);
+                  break;
+                case PROTOCOL_VERSION_2:
+                  encode_vb_sensor_data_config_v2(bytes, obj);
+                  break;
+                default:
+                  throw new Error("Protocol version is not suppported!");
+              }
               encode_uint16(bytes, calc_crc(bytes.slice(1)));
 
               break;
@@ -109,6 +125,8 @@ function Encoder(obj, fPort) { // Used for The Things Network server
 
 /**
  * Base configuration encoder
+ *
+ * This function is only being used by config generatore, therefore only support the latest version
  */
 function EncodeBaseConfig(obj) {
   var bytes = [];
@@ -135,6 +153,8 @@ function encode_base_config(bytes, obj) {
 
 /**
  * VB sensor encoder
+ *
+ * This function is only being used by config generatore, therefore only support the latest version
  */
 function EncodeSensorConfig(obj) {
   var bytes = [];
@@ -145,10 +165,12 @@ function EncodeSensorConfig(obj) {
 
 /**
  * VB sensor data encoder
+ *
+ * This function is only being used by config generatore, therefore only support the latest version
  */
 function EncodeSensorDataConfig(obj) {
   var bytes = [];
-  encode_vb_sensor_data_config(bytes, obj);
+  encode_vb_sensor_data_config_v2(bytes, obj);
 
   return bytes;
 }
@@ -178,7 +200,43 @@ function encode_vb_sensor_config(bytes, obj) {
 
 }
 
-function encode_vb_sensor_data_config(bytes, obj) {
+function encode_vb_sensor_data_config_v1(bytes, obj) {
+  encode_device_type(bytes, obj.device_type);
+
+  encode_calculation_trigger(bytes, obj.calculation_trigger);
+  encode_uint16(bytes, obj.calculation_interval);
+
+  encode_uint16(bytes, obj.fragment_message_interval);
+  if (obj.threshold_window % 2) throw new Error("threshold_window must be multiple of 2")
+  encode_uint8(bytes, obj.threshold_window / 2);
+
+  for (idx = 0; idx < 5; idx++) {
+    encode_fft_trigger_threshold(
+      bytes,
+      obj.trigger_thresholds[idx].unit,
+      obj.trigger_thresholds[idx].frequency,
+      obj.trigger_thresholds[idx].magnitude);
+  }
+
+  encode_fft_selection(bytes, obj.selection);
+
+  encode_uint16(bytes, obj.frequency.span.velocity.start);
+  encode_uint16(bytes, obj.frequency.span.velocity.stop);
+
+  encode_uint16(bytes, obj.frequency.span.acceleration.start);
+  encode_uint16(bytes, obj.frequency.span.acceleration.stop);
+
+  encode_uint8(bytes, obj.frequency.resolution.velocity);
+  encode_uint8(bytes, obj.frequency.resolution.acceleration);
+
+  if (obj.scale.velocity % 4) throw new Error("scale.velocity must be multiple of 4")
+  encode_uint8(bytes, obj.scale.velocity / 4);
+  if (obj.scale.acceleration % 4) throw new Error("scale.acceleration must be multiple of 4")
+  encode_uint8(bytes, obj.scale.acceleration / 4);
+
+}
+
+function encode_vb_sensor_data_config_v2(bytes, obj) {
   // byte[1]
   encode_device_type(bytes, obj.device_type);
 
@@ -308,7 +366,7 @@ function encode_calculation_trigger(bytes, calculation_trigger) {
   {
     throw new Error('calculation_trigger must contain: on_event, on_threshold and on_button_press boolean fields');
   }
-  
+
   calculation_trigger_bitmask |= calculation_trigger.on_event ? 0x01 : 0x00;
   calculation_trigger_bitmask |= calculation_trigger.on_threshold ? 0x02 : 0x00;
   calculation_trigger_bitmask |= calculation_trigger.on_button_press ? 0x04 : 0x00;

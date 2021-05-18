@@ -1,4 +1,4 @@
-var encoder = require('../encoder_vb_prot-2_doc-E_rev-1.js');
+var encoder = require('../encoder_vb_doc-E_rev-2.js');
 
 var baseEU868 = {
   "header": { "message_type": "base_configuration", "protocol_version": 2 },
