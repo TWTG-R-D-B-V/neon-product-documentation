@@ -9,6 +9,13 @@ The Vibration Sensor communicates over LoRaWAN using a binary protocol. Usually 
 - encoding: from JSON to a binary string for to the Vibration Sensor
 - decoding: from a binary string from the Vibration Sensor to JSON
 
+#### Known issues
+| Known issues  | Effect    | Effected serial numbers   |
+|-              |-          |-                          |
+| Incorrect sequence number in sensor data message | 1. The sequence number will constantly be two.<br /> 2. The sequence number will wrap to a not expected value. | VB0120AA00001 to VB0120AA00216 |
+
+Contact support.neon@twtg.io for futher information.
+
 #### Encoder / decoder
 
 This folder contains Javascript files can help with the conversion in for example the LoRa network server. The scripts are known to be compatible with the following network servers:
