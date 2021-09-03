@@ -1,10 +1,36 @@
-// Protocol v2 only
+/**
+ * Filename          : decoder_tt_doc-D_rev-2.js
+ * Latest commit     : 18f744de
+ * Protocol document : D
+ *
+ * Release History
+ *
+ * 2020-09-23 revision 0
+ * - initial version
+ *
+ * 2020-04-02 revision 1
+ * - prefix hex values with 0x
+ * - made reset_flags and bist
+ * - updated assert payload formatting in reboot info
+ * - added DecodeHexString to directly decode from HEX string
+ *
+ * 2021-07-15 revision 2
+ * - Add support for protocol version 3, document D
+ * - Add status element to application temperature
+ * - Use a function to decode application_temperature
+ * - Verify message length before parsing
+ * - Fixed hexadecimal message decoding
+ *
+ * YYYY-MM-DD revision X
+ * -
+ */
 
 if (typeof module !== 'undefined') {
   // Only needed for nodejs
   module.exports = {
     Decode: Decode,
     Decoder: Decoder,
+    DecodeHexString: DecodeHexString,
     decode_float: decode_float,
     decode_uint32: decode_uint32,
     decode_int32: decode_int32,
@@ -13,6 +39,8 @@ if (typeof module !== 'undefined') {
     decode_uint8: decode_uint8,
     decode_int8: decode_int8,
     decode_reboot_info: decode_reboot_info,
+    decode_application_temperature: decode_application_temperature,
+    from_hex_string: from_hex_string
   };
 }
 
@@ -25,7 +53,8 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
   message_type = bytes[0] & 0x0F;
 
   switch (decoded.header.protocol_version) {
-    case 2: { // protocol_version = 2
+    case 2:
+    case 3: { // protocol_version = 2 and 3
       decoded.header.message_type = message_types_lookup_v2(message_type);
 
       var cursor = {}; // keeping track of which byte to process.
@@ -46,7 +75,7 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
         }
 
         case 3: { // Sensor event message
-          decoded.application_event = decode_application_event_msg(bytes, cursor);
+          decoded.application_event = decode_application_event_msg(bytes, cursor, decoded.header.protocol_version);
           break;
         }
 
@@ -67,9 +96,31 @@ function Decoder(obj, fPort) { // for The Things Network server
   return Decode(fPort, obj);
 }
 
+/**
+ * Decoder for plain HEX string
+ */
+function DecodeHexString(hex_string) {
+  return Decode(15, from_hex_string(hex_string));
+}
+
 /******************
  * Helper functions
  */
+
+// helper function to convert a ASCII HEX string to a byte string
+function from_hex_string(hex_string) {
+  if (typeof hex_string != "string") throw new Error("hex_string must be a string");
+  if (!hex_string.match(/^[0-9A-F]*$/gi)) throw new Error("hex_string contain only 0-9, A-F characters");
+  if (hex_string.length & 0x01 > 0) throw new Error("hex_string length must be a multiple of two");
+
+  var byte_string = [];
+  for (i = 0; i < hex_string.length; i += 2)
+  {
+      var hex = hex_string.slice(i, i + 2);
+      byte_string.push(parseInt(hex, 16));
+  }
+  return byte_string;
+}
 
 // helper function to parse an 32 bit float
 function decode_float(bytes, cursor) {
@@ -162,13 +213,68 @@ function decode_int8(bytes, cursor) {
   return result;
 }
 
-// helper function to parse reboot_info
-function decode_reboot_info(bytes, cursor) {
-  var result;
-  var i = cursor.value;
+// helper function to parse tt application temperature
+function decode_application_temperature(bytes, cursor, version) {
+  var temperature = {};
+  var PT100LowerErrorCode = -3000;
+  var PT100UpperErrorCode = -3001;
+  var VboundLowerErrorCode = -3002;
+  var VboundUpperErrorCode = -3003;
+  var UnknownType = -3004;
 
-  reboot_type = decode_uint8(bytes, cursor);
-  reboot_payload = [0, 0, 0, 0, 0, 0, 0, 0];
+  min = decode_int16(bytes, cursor) / 10;
+  max = decode_int16(bytes, cursor) / 10;
+  avg = decode_int16(bytes, cursor) / 10;
+
+  if (version == 2) {
+    temperature.min = min;
+    temperature.max = max;
+    temperature.avg = avg;
+  } else if (version == 3) {
+    if (
+      min == PT100LowerErrorCode ||
+      avg == PT100LowerErrorCode ||
+      max == PT100LowerErrorCode
+    ) {
+      temperature.status = "PT100 bound Lower Error";
+    } else if (
+      min == PT100UpperErrorCode ||
+      avg == PT100UpperErrorCode ||
+      max == PT100UpperErrorCode
+    ) {
+      temperature.status = "PT100 bound Upper Error";
+    } else if (
+      min == VboundLowerErrorCode ||
+      avg == VboundLowerErrorCode ||
+      max == VboundLowerErrorCode
+    ) {
+      temperature.status = "V bound Lower Error";
+    } else if (
+      min == VboundUpperErrorCode ||
+      avg == VboundUpperErrorCode ||
+      max == VboundUpperErrorCode
+    ) {
+      temperature.status = "V bound Upper Error";
+    } else if (min == UnknownType || avg == UnknownType || max == UnknownType) {
+      temperature.status = "Unrecognized sensor type";
+    } else {
+      temperature.min = min;
+      temperature.max = max;
+      temperature.avg = avg;
+      temperature.status = "OK";
+    }
+  } else {
+    throw "Invalid protocol version";
+  }
+
+  return temperature;
+}
+
+// helper function to parse reboot_info
+function decode_reboot_info(reboot_type, bytes, cursor) {
+  var result;
+
+  var reboot_payload = [0, 0, 0, 0, 0, 0, 0, 0];
   reboot_payload[0] += decode_uint8(bytes, cursor);
   reboot_payload[1] += decode_uint8(bytes, cursor);
   reboot_payload[2] += decode_uint8(bytes, cursor);
@@ -197,12 +303,16 @@ function decode_reboot_info(bytes, cursor) {
       break;
 
     case 3: // REBOOT_INFO_TYPE_ASSERT
+      var payloadCursor = {}; // keeping track of which byte to process.
+      payloadCursor.value = 4; // skip caller address
+      actualValue = decode_int32(reboot_payload, payloadCursor);
       result = 'assert (' +
-        String.fromCharCode(
-          reboot_payload[0], reboot_payload[1],
-          reboot_payload[2], reboot_payload[3],
-          reboot_payload[4], reboot_payload[5]).replace(/[^\x20-\x7E]/g, '') + ':' +
-        Number(reboot_payload[6] + (reboot_payload[7] << 8)) .toString() + ')';
+          'caller: 0x' +
+          uint8_to_hex(reboot_payload[3]) +
+          uint8_to_hex(reboot_payload[2]) +
+          uint8_to_hex(reboot_payload[1]) +
+          uint8_to_hex(reboot_payload[0]) +
+          '; value: ' + actualValue.toString() + ')';
       break;
 
     case 4: // REBOOT_INFO_TYPE_APPLICATION_REASON
@@ -312,76 +422,118 @@ Object.prototype.in =
  */
 
 function decode_boot_msg(bytes, cursor) {
-    var boot = {}
+  var boot = {}
 
-    device_type = decode_uint8(bytes, cursor);
-    boot.device_type = device_types_lookup_v2(device_type);
+  var expected_length = 23;
+  if (bytes.length != expected_length) {
+    throw "Invalid boot message length " + bytes.length + " instead of " + expected_length
+  }
 
-    var version_hash = decode_uint32(bytes, cursor);
-    boot.version_hash = uint32_to_hex(version_hash);
+  // byte[1]
+  device_type = decode_uint8(bytes, cursor);
+  boot.device_type = device_types_lookup_v2(device_type);
 
-    var device_config_crc = decode_uint16(bytes, cursor);
-    boot.device_config_crc = uint16_to_hex(device_config_crc);
+  // byte[2..5]
+  var version_hash = decode_uint32(bytes, cursor);
+  boot.version_hash = '0x' + uint32_to_hex(version_hash);
 
-    var application_config_crc = decode_uint16(bytes, cursor);
-    boot.application_config_crc = uint16_to_hex(application_config_crc);
+  // byte[6..7]
+  var device_config_crc = decode_uint16(bytes, cursor);
+  boot.device_config_crc = '0x' + uint16_to_hex(device_config_crc);
 
-    boot.reset_flags = decode_uint8(bytes, cursor);
-    boot.reboot_counter = decode_uint8(bytes, cursor);
+  // byte[8..9]
+  var application_config_crc = decode_uint16(bytes, cursor);
+  boot.application_config_crc = '0x' + uint16_to_hex(application_config_crc);
 
-    boot.reboot_info = decode_reboot_info(bytes, cursor);
+  // byte[10]
+  var reset_flags = decode_uint8(bytes, cursor);
+  boot.reset_flags = '0x' + uint8_to_hex(reset_flags);
 
-    boot.last_device_state = decode_uint8(bytes, cursor);
-    boot.bist = decode_uint8(bytes, cursor);
+  // byte[11]
+  boot.reboot_counter = decode_uint8(bytes, cursor);
 
-    return boot;
+  // byte[12]
+  boot_type = decode_uint8(bytes, cursor);
+
+  // byte[13..20]
+  boot.reboot_info = decode_reboot_info(boot_type, bytes, cursor);
+
+  // byte[21]
+  boot.last_device_state = decode_uint8(bytes, cursor);
+
+  // byte[22]
+  var bist = decode_uint8(bytes, cursor);
+  boot.bist = '0x' + uint8_to_hex(bist);
+
+  return boot;
 }
 
-function decode_application_event_msg(bytes, cursor) {
-    var application_event = {}
+function decode_application_event_msg(bytes, cursor, version) {
+  var application_event = {}
 
-    trigger = decode_uint8(bytes, cursor);
-    application_event.trigger = trigger_lookup_v2(trigger);
+  var expected_length = 9;
+  if (bytes.length != expected_length) {
+      throw "Invalid application_event message length " + bytes.length + " instead of " + expected_length
+  }
 
-    application_event.temperature = {};
-    application_event.temperature.min = decode_int16(bytes, cursor) / 10;
-    application_event.temperature.max = decode_int16(bytes, cursor) / 10;
-    application_event.temperature.avg = decode_int16(bytes, cursor) / 10;
+  // byte[1]
+  trigger = decode_uint8(bytes, cursor);
+  application_event.trigger = trigger_lookup_v2(trigger);
 
-    conditions = decode_uint8(bytes, cursor);
-    application_event.condition_0 = (conditions & 1);
-    application_event.condition_1 = ((conditions >> 1) & 1);
-    application_event.condition_2 = ((conditions >> 2) & 1);
-    application_event.condition_3 = ((conditions >> 3) & 1);
+  // byte[2..7]
+  application_event.temperature = {};
 
-    return application_event;
+  application_event.temperature = decode_application_temperature(bytes, cursor, version);
+
+  // byte[8]
+  conditions = decode_uint8(bytes, cursor);
+  application_event.condition_0 = (conditions & 1);
+  application_event.condition_1 = ((conditions >> 1) & 1);
+  application_event.condition_2 = ((conditions >> 2) & 1);
+  application_event.condition_3 = ((conditions >> 3) & 1);
+
+  return application_event;
 }
 
 function decode_device_status_msg(bytes, cursor) {
-    var device_status = {};
+  var device_status = {};
 
-    var device_config_crc = decode_uint16(bytes, cursor);
-    device_status.device_config_crc = uint16_to_hex(device_config_crc);
+  var expected_length = 18;
+  if (bytes.length != expected_length) {
+      throw "Invalid device_status message length " + bytes.length + " instead of " + expected_length
+  }
 
-    var application_config_crc = decode_uint16(bytes, cursor);
-    device_status.application_config_crc =
-        uint16_to_hex(application_config_crc);
+  // byte[1..2]
+  var device_config_crc = decode_uint16(bytes, cursor);
+  device_status.device_config_crc = '0x' + uint16_to_hex(device_config_crc);
 
-    device_status.event_counter = decode_uint8(bytes, cursor);
+  // byte[3..4]
+  var application_config_crc = decode_uint16(bytes, cursor);
+  device_status.application_config_crc = '0x' + uint16_to_hex(application_config_crc);
 
-    device_status.battery_voltage = {};
-    device_status.battery_voltage.low = decode_uint16(bytes, cursor) / 1000.0;
-    device_status.battery_voltage.high = decode_uint16(bytes, cursor) / 1000.0;
-    device_status.battery_voltage.settle = decode_uint16(bytes, cursor) / 1000.0;
+  // byte[5]
+  device_status.event_counter = decode_uint8(bytes, cursor);
 
-    device_status.temperature = {};
-    device_status.temperature.min = decode_int8(bytes, cursor);
-    device_status.temperature.max = decode_int8(bytes, cursor);
-    device_status.temperature.avg = decode_int8(bytes, cursor);
+  // byte[6..11]
+  device_status.battery_voltage = {};
+  device_status.battery_voltage.low = decode_uint16(bytes, cursor) / 1000.0;
+  device_status.battery_voltage.high = decode_uint16(bytes, cursor) / 1000.0;
+  device_status.battery_voltage.settle = decode_uint16(bytes, cursor) / 1000.0;
 
-    device_status.tx_counter = decode_uint8(bytes, cursor);
-    device_status.avg_rssi = -decode_uint8(bytes, cursor);
-    device_status.avg_snr = decode_int8(bytes, cursor);
+  // byte[12..14]
+  device_status.temperature = {};
+  device_status.temperature.min = decode_int8(bytes, cursor);
+  device_status.temperature.max = decode_int8(bytes, cursor);
+  device_status.temperature.avg = decode_int8(bytes, cursor);
 
-    return device_status;
+  // byte[15]
+  device_status.tx_counter = decode_uint8(bytes, cursor);
+
+  // byte[16]
+  device_status.avg_rssi = -decode_uint8(bytes, cursor);
+
+  // byte[17]
+  device_status.avg_snr = decode_int8(bytes, cursor);
+
+  return device_status;
 }
