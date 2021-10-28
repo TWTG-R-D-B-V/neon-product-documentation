@@ -1,11 +1,28 @@
 /**
- * Filename      : encoder_vb_prot-1_doc-D_rev-0.js
- * Latest commit : 0e023f4a
+ * Filename          : encoder_vb_doc-E_rev-3.js
+ * Latest commit     : 80a0bcad
+ * Protocol document : E
  *
  * Release History
  *
  * 2021-04-14 revision 0
  * - initial version
+ *
+ * 2021-03-05 revision 1
+ * - Uses scientific notation for sensor data scale
+ *
+ * 2021-05-14 revision 2
+ * - Made it compatible with v1 and v2 (merged in protocol v1)
+ *
+ * 2021-06-28 revision 3
+ * - rename unconfirmed_repeat to number_of_unconfirmed_messages
+ * - Added limitation to base configuration
+ * - Update minimum number of number_of_unconfirmed_messages
+ * - Add value range assertion to encode_device_config
+ * - Fixed the parsing of unconfirmed_repeat to number_of_unconfirmed_messages
+ *
+ * YYYY-MM-DD revision X
+ * -
  */
 
 if (typeof module !== 'undefined') {
@@ -20,7 +37,8 @@ if (typeof module !== 'undefined') {
     encode_events_mode: encode_events_mode,
     encode_base_config: encode_base_config,
     encode_vb_sensor_config: encode_vb_sensor_config,
-    encode_vb_sensor_data_config: encode_vb_sensor_data_config,
+    encode_vb_sensor_data_config_v1: encode_vb_sensor_data_config_v1,
+    encode_vb_sensor_data_config_v2: encode_vb_sensor_data_config_v2,
     encode_calculation_trigger: encode_calculation_trigger,
     encode_fft_trigger_threshold: encode_fft_trigger_threshold,
     encode_fft_selection: encode_fft_selection,
@@ -33,6 +51,7 @@ if (typeof module !== 'undefined') {
     encode_int16: encode_int16,
     encode_uint8: encode_uint8,
     encode_int8: encode_int8,
+    encode_sci_6: encode_sci_6,
     calc_crc: calc_crc,
   };
 }
@@ -45,14 +64,17 @@ function Encode(fPort, obj) { // Used for ChirpStack (aka LoRa Network Server)
   // object to an array or buffer of bytes.
   var bytes = [];
 
-  var PROTOCOL_VERSION = 1;
+  var PROTOCOL_VERSION_1 = 1;
+  var PROTOCOL_VERSION_2 = 2;
 
   var MSG_BASE_CONFIG         = 5;
   var MSG_SENSOR_CONFIG       = 6;
   var MSG_SENSOR_DATA_CONFIG  = 7;
 
   switch (obj.header.protocol_version) {
-    case PROTOCOL_VERSION: {
+    case PROTOCOL_VERSION_1:
+    case PROTOCOL_VERSION_2:
+    {
       switch (obj.header.message_type) {
         case "base_configuration": {
           encode_header(bytes, MSG_BASE_CONFIG, obj.header.protocol_version);
@@ -78,7 +100,16 @@ function Encode(fPort, obj) { // Used for ChirpStack (aka LoRa Network Server)
           switch (obj.device_type) {
             case "vb":
               encode_header(bytes, MSG_SENSOR_DATA_CONFIG, obj.header.protocol_version);
-              encode_vb_sensor_data_config(bytes, obj);
+              switch (obj.header.protocol_version) {
+                case PROTOCOL_VERSION_1:
+                  encode_vb_sensor_data_config_v1(bytes, obj);
+                  break;
+                case PROTOCOL_VERSION_2:
+                  encode_vb_sensor_data_config_v2(bytes, obj);
+                  break;
+                default:
+                  throw new Error("Protocol version is not suppported!");
+              }
               encode_uint16(bytes, calc_crc(bytes.slice(1)));
 
               break;
@@ -105,6 +136,8 @@ function Encoder(obj, fPort) { // Used for The Things Network server
 
 /**
  * Base configuration encoder
+ *
+ * This function is only being used by config generatore, therefore only support the latest version
  */
 function EncodeBaseConfig(obj) {
   var bytes = [];
@@ -114,9 +147,36 @@ function EncodeBaseConfig(obj) {
 }
 
 function encode_base_config(bytes, obj) {
+  // The following parameters refers to the same configuration, only different naming on different
+  // protocol version.
+  // Copy the parameter to a local one
+  var number_of_unconfirmed_messages = 0;
+  if (typeof obj.number_of_unconfirmed_messages != "undefined") {
+    number_of_unconfirmed_messages = obj.number_of_unconfirmed_messages;
+  } else if (typeof obj.unconfirmed_repeat != "undefined") {
+    number_of_unconfirmed_messages = obj.unconfirmed_repeat;
+  } else {
+    throw new Error("Missing number_of_unconfirmed_messages OR unconfirmed_repeat parameter");
+  }
+
+  if (number_of_unconfirmed_messages < 1 || number_of_unconfirmed_messages > 5) {
+      throw new Error("number_of_unconfirmed_messages is outside of specification: " + obj.number_of_unconfirmed_messages);
+  }
+  if (obj.communication_max_retries < 1) {
+      throw new Error("communication_max_retries is outside specification: " + obj.communication_max_retries);
+  }
+  if (obj.status_message_interval_seconds < 60 || obj.status_message_interval_seconds > 604800) {
+      throw new Error("status_message_interval_seconds is outside specification: " + obj.status_message_interval_seconds);
+  }
+  if (obj.lora_failure_holdoff_count < 0 || obj.lora_failure_holdoff_count > 255) {
+      throw new Error("lora_failure_holdoff_count is outside specification: " + obj.lora_failure_holdoff_count);
+  }
+  if (obj.lora_system_recover_count < 0 || obj.lora_system_recover_count > 255) {
+      throw new Error("lora_system_recover_count is outside specification: " + obj.lora_system_recover_count);
+  }
   encode_base_config_switch(bytes, obj.switch_mask);
   encode_uint8(bytes, obj.communication_max_retries);             // Unit: -
-  encode_uint8(bytes, obj.unconfirmed_repeat);                    // Unit: -
+  encode_uint8(bytes, number_of_unconfirmed_messages);            // Unit: -
   encode_uint8(bytes, obj.periodic_message_random_delay_seconds); // Unit: s
   encode_uint16(bytes, obj.status_message_interval_seconds / 60); // Unit: minutes
   encode_uint8(bytes, obj.status_message_confirmed_interval);     // Unit: -
@@ -131,6 +191,8 @@ function encode_base_config(bytes, obj) {
 
 /**
  * VB sensor encoder
+ *
+ * This function is only being used by config generatore, therefore only support the latest version
  */
 function EncodeSensorConfig(obj) {
   var bytes = [];
@@ -141,10 +203,12 @@ function EncodeSensorConfig(obj) {
 
 /**
  * VB sensor data encoder
+ *
+ * This function is only being used by config generatore, therefore only support the latest version
  */
 function EncodeSensorDataConfig(obj) {
   var bytes = [];
-  encode_vb_sensor_data_config(bytes, obj);
+  encode_vb_sensor_data_config_v2(bytes, obj);
 
   return bytes;
 }
@@ -174,7 +238,7 @@ function encode_vb_sensor_config(bytes, obj) {
 
 }
 
-function encode_vb_sensor_data_config(bytes, obj) {
+function encode_vb_sensor_data_config_v1(bytes, obj) {
   encode_device_type(bytes, obj.device_type);
 
   encode_calculation_trigger(bytes, obj.calculation_trigger);
@@ -208,6 +272,57 @@ function encode_vb_sensor_data_config(bytes, obj) {
   if (obj.scale.acceleration % 4) throw new Error("scale.acceleration must be multiple of 4")
   encode_uint8(bytes, obj.scale.acceleration / 4);
 
+}
+
+function encode_vb_sensor_data_config_v2(bytes, obj) {
+  // byte[1]
+  encode_device_type(bytes, obj.device_type);
+
+  // byte[2]
+  encode_calculation_trigger(bytes, obj.calculation_trigger);
+
+  // byte[3..4]
+  encode_uint16(bytes, obj.calculation_interval);
+
+  // byte[5..6]
+  encode_uint16(bytes, obj.fragment_message_interval);
+  if (obj.threshold_window % 2) throw new Error("threshold_window must be multiple of 2")
+
+  // byte[7]
+  encode_uint8(bytes, obj.threshold_window / 2);
+
+  // byte[8..27]
+  for (idx = 0; idx < 5; idx++) {
+    encode_fft_trigger_threshold(
+      bytes,
+      obj.trigger_thresholds[idx].unit,
+      obj.trigger_thresholds[idx].frequency,
+      obj.trigger_thresholds[idx].magnitude);
+  }
+
+  // byte[28]
+  encode_fft_selection(bytes, obj.selection);
+
+  // byte[29..30]
+  encode_uint16(bytes, obj.frequency.span.velocity.start);
+  // byte[31..32]
+  encode_uint16(bytes, obj.frequency.span.velocity.stop);
+
+  // byte[33..34]
+  encode_uint16(bytes, obj.frequency.span.acceleration.start);
+  // byte[35..36]
+  encode_uint16(bytes, obj.frequency.span.acceleration.stop);
+
+  // byte[37]
+  encode_uint8(bytes, obj.frequency.resolution.velocity);
+  // byte[38]
+  encode_uint8(bytes, obj.frequency.resolution.acceleration);
+
+  // byte[39]
+  encode_sci_6(bytes, obj.scale.velocity);
+
+  // byte[40]
+  encode_sci_6(bytes, obj.scale.acceleration);
 }
 
 /* Helper Functions *********************************************************/
@@ -289,7 +404,7 @@ function encode_calculation_trigger(bytes, calculation_trigger) {
   {
     throw new Error('calculation_trigger must contain: on_event, on_threshold and on_button_press boolean fields');
   }
-  
+
   calculation_trigger_bitmask |= calculation_trigger.on_event ? 0x01 : 0x00;
   calculation_trigger_bitmask |= calculation_trigger.on_threshold ? 0x02 : 0x00;
   calculation_trigger_bitmask |= calculation_trigger.on_button_press ? 0x04 : 0x00;
@@ -299,7 +414,7 @@ function encode_calculation_trigger(bytes, calculation_trigger) {
 
 // helper function to encode fft trigger threshold
 function encode_fft_trigger_threshold(bytes, unit, frequency, magnitude) {
-  var tigger;
+  var trigger;
   switch (unit)
   {
     case "velocity":
@@ -438,6 +553,28 @@ function encode_uint8(bytes, value) {
 // helper function to encode an int8
 function encode_int8(bytes, value) {
   encode_uint8(bytes, value);
+}
+
+// helper function to encode 6 bit scientific notation
+function encode_sci_6(bytes, scale) {
+    scale_power = Math.floor(Math.log10(scale));
+    scale_coefficient = scale / Math.pow(10, scale_power);
+    if (scale_coefficient != Math.floor(scale_coefficient) || scale_coefficient < 1 || scale_coefficient > 15)
+    {
+      // try one power less
+      scale_power = scale_power - 1
+      scale_coefficient = scale / Math.pow(10, scale_power);
+      if (scale_coefficient != Math.floor(scale_coefficient) || scale_coefficient < 1 || scale_coefficient > 15)
+      {
+        throw new Error("Coeffiecient must be between 1 .. 15")
+      }
+    }
+
+    if (scale_power < -2 || scale_power > 1) throw new Error("Power must be between -2 .. 1")
+
+    power = ((scale_power + 2) & 0x03) << 4;
+    coefficient = scale_coefficient & 0x0F;
+    bytes.push(coefficient | power);
 }
 
 // calc_crc inspired by https://github.com/SheetJS/js-crc32
