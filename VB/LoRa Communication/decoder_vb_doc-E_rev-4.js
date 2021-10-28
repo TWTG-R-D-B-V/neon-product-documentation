@@ -1,6 +1,7 @@
 /**
- * Filename      : decoder_vb_doc-E_rev-2.js
- * Latest commit : aaa27b8a
+ * Filename          : decoder_vb_doc-E_rev-4.js
+ * Latest commit     : 8d3d992e
+ * Protocol document : E
  *
  * Release History
  *
@@ -13,6 +14,15 @@
  * 2021-05-14 revision 2
  * - made it compatible with v1 and v2 (merged in protocol v1)
  * - added DecodeHexString to directly decode from HEX string
+ *
+ * 2021-07-15 revision 3
+ * - Verify message length with expected_length before parsing
+ *
+ * 2021-10-27 revision 4
+ * - Fixed range check of start_frequency
+ *
+ * YYYY-MM-DD revision X
+ * -
  */
 
 if (typeof module !== 'undefined') {
@@ -323,14 +333,14 @@ function decode_sensor_data_config(bytes, cursor, protocol_version) {
       var scale_power = ((config >> 17) & 0x03) - 2;
       result.scale = scale_coefficient  * Math.pow(10, scale_power);
       break;
-      
+
     default:
       throw "Unsupported protocol version!";
   }
 
   // bits[19..31]
   result.start_frequency = config >>> 19;
-  if (result.start_frequency < 1 || result.start_frequency > 6666) {
+  if (result.start_frequency < 0 || result.start_frequency > 8191) {
     throw "Invalid start_frequency value in sensor data config!";
   }
 
@@ -522,8 +532,9 @@ Object.prototype.in = function() {
 function decode_boot_msg(bytes, cursor) {
   var boot = {};
 
-  if (bytes.length != 46) {
-    throw "Invalid boot_info message length"
+  var expected_length = 46;
+  if (bytes.length != expected_length) {
+      throw "Invalid boot message length " + bytes.length + " instead of " + expected_length
   }
 
   boot.base = {};
@@ -599,8 +610,9 @@ function decode_boot_msg(bytes, cursor) {
 function decode_activated_msg(bytes, cursor) {
   var activated = {};
 
-  if (bytes.length != 7) {
-    throw "Invalid activated message length" + bytes.length
+  var expected_length = 7;
+  if (bytes.length != expected_length) {
+      throw "Invalid activated message length " + bytes.length + " instead of " + expected_length
   }
 
   activated.sensor = {};
@@ -618,8 +630,9 @@ function decode_activated_msg(bytes, cursor) {
 function decode_deactivated_msg(bytes, cursor) {
   var deactivated = {};
 
-  if (bytes.length != 3) {
-    throw "Invalid sensor_event message length"
+  var expected_length = 3;
+  if (bytes.length != expected_length) {
+      throw "Invalid deactivated message length " + bytes.length + " instead of " + expected_length
   }
 
   // byte[1]
@@ -639,8 +652,9 @@ function decode_deactivated_msg(bytes, cursor) {
 function decode_sensor_event_msg(bytes, cursor) {
   var sensor_event = {};
 
-  if (bytes.length != 45) {
-    throw "Invalid sensor_event message length"
+  var expected_length = 45;
+  if (bytes.length != expected_length) {
+      throw "Invalid sensor_event message length " + bytes.length + " instead of " + expected_length
   }
 
   // byte[1]
@@ -708,8 +722,9 @@ function decode_sensor_event_msg(bytes, cursor) {
 function decode_device_status_msg(bytes, cursor) {
   var device_status = {};
 
-  if (bytes.length != 24) {
-    throw "Invalid device_status message length"
+  var expected_length = 24;
+  if (bytes.length != expected_length) {
+      throw "Invalid device_status message length " + bytes.length + " instead of " + expected_length
   }
 
   device_status.base = {};
@@ -768,8 +783,9 @@ function decode_device_status_msg(bytes, cursor) {
 function decode_sensor_data_msg(bytes, cursor, protocol_version) {
   var sensor_data = {};
 
-  if (bytes.length != 46) {
-    throw "Invalid sensor_data message length", bytes.length
+  var expected_length = 46;
+  if (bytes.length != expected_length) {
+      throw "Invalid sensor_data message length " + bytes.length + " instead of " + expected_length
   }
 
   // byte[1..5]

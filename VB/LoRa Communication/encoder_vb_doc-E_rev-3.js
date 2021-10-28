@@ -1,6 +1,7 @@
 /**
- * Filename      : encoder_vb_doc-E_rev-2.js
- * Latest commit : 35af86ad
+ * Filename          : encoder_vb_doc-E_rev-3.js
+ * Latest commit     : 80a0bcad
+ * Protocol document : E
  *
  * Release History
  *
@@ -12,6 +13,16 @@
  *
  * 2021-05-14 revision 2
  * - Made it compatible with v1 and v2 (merged in protocol v1)
+ *
+ * 2021-06-28 revision 3
+ * - rename unconfirmed_repeat to number_of_unconfirmed_messages
+ * - Added limitation to base configuration
+ * - Update minimum number of number_of_unconfirmed_messages
+ * - Add value range assertion to encode_device_config
+ * - Fixed the parsing of unconfirmed_repeat to number_of_unconfirmed_messages
+ *
+ * YYYY-MM-DD revision X
+ * -
  */
 
 if (typeof module !== 'undefined') {
@@ -136,9 +147,36 @@ function EncodeBaseConfig(obj) {
 }
 
 function encode_base_config(bytes, obj) {
+  // The following parameters refers to the same configuration, only different naming on different
+  // protocol version.
+  // Copy the parameter to a local one
+  var number_of_unconfirmed_messages = 0;
+  if (typeof obj.number_of_unconfirmed_messages != "undefined") {
+    number_of_unconfirmed_messages = obj.number_of_unconfirmed_messages;
+  } else if (typeof obj.unconfirmed_repeat != "undefined") {
+    number_of_unconfirmed_messages = obj.unconfirmed_repeat;
+  } else {
+    throw new Error("Missing number_of_unconfirmed_messages OR unconfirmed_repeat parameter");
+  }
+
+  if (number_of_unconfirmed_messages < 1 || number_of_unconfirmed_messages > 5) {
+      throw new Error("number_of_unconfirmed_messages is outside of specification: " + obj.number_of_unconfirmed_messages);
+  }
+  if (obj.communication_max_retries < 1) {
+      throw new Error("communication_max_retries is outside specification: " + obj.communication_max_retries);
+  }
+  if (obj.status_message_interval_seconds < 60 || obj.status_message_interval_seconds > 604800) {
+      throw new Error("status_message_interval_seconds is outside specification: " + obj.status_message_interval_seconds);
+  }
+  if (obj.lora_failure_holdoff_count < 0 || obj.lora_failure_holdoff_count > 255) {
+      throw new Error("lora_failure_holdoff_count is outside specification: " + obj.lora_failure_holdoff_count);
+  }
+  if (obj.lora_system_recover_count < 0 || obj.lora_system_recover_count > 255) {
+      throw new Error("lora_system_recover_count is outside specification: " + obj.lora_system_recover_count);
+  }
   encode_base_config_switch(bytes, obj.switch_mask);
   encode_uint8(bytes, obj.communication_max_retries);             // Unit: -
-  encode_uint8(bytes, obj.unconfirmed_repeat);                    // Unit: -
+  encode_uint8(bytes, number_of_unconfirmed_messages);            // Unit: -
   encode_uint8(bytes, obj.periodic_message_random_delay_seconds); // Unit: s
   encode_uint16(bytes, obj.status_message_interval_seconds / 60); // Unit: minutes
   encode_uint8(bytes, obj.status_message_confirmed_interval);     // Unit: -
