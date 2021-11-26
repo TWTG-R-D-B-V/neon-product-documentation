@@ -1,3 +1,7 @@
+## Online configurator
+
+The device is configurable over LoRaWAN. To help generate a configuration, our [NEON Configurator](https://neon-configurator.twtg.io/neon/tt/v2/) can be used. This configurator is an online form with all possible settings within their allowed ranges. After tailoring the settings to your application you can then generate a LoRaWAN message to be sent via your network server.
+
 ## Conversion examples
 
 The examples below are generated using the Javascript files in the example folder using [nodejs](https://nodejs.org/) (a Linux application to execute Javascript files).

@@ -8,6 +8,4 @@ https://www.twtg.io/products/neon-vibration-sensor/
 
 The NEON Vibration Sensor can be configured via LoRaWAN. The configuration includes settings for communication, measurement, event triggers, and data processing. Information on how these configurations can be encoded and sent to the device can be found in the [LoRa Communication](LoRa%20Communication) folder.
 
-To help generate a configuration, our [NEON Configurator](https://neon-configurator.twtg.io/) can be used. This configurator is an online form with all possible settings within their allowed ranges. After tailoring the settings to your application you can then generate a LoRaWAN message to be sent via your network server.
-
 ![](../.resources/vb.jpg) 
