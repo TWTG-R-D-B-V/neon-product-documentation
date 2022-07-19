@@ -1,6 +1,6 @@
 /**
- * Filename          : encoder_vb_doc-E_rev-3.js
- * Latest commit     : 80a0bcad
+ * Filename          : encoder_vb_doc-E_rev-4.js
+ * Latest commit     : 14744408
  * Protocol document : E
  *
  * Release History
@@ -21,8 +21,12 @@
  * - Add value range assertion to encode_device_config
  * - Fixed the parsing of unconfirmed_repeat to number_of_unconfirmed_messages
  *
+ * 2022-07-12 revision 4
+ * - Fixed encode_sci_6 by making sure the scale_power is clipped to the available range
+ *
  * YYYY-MM-DD revision X
  * -
+ *
  */
 
 if (typeof module !== 'undefined') {
@@ -67,64 +71,64 @@ function Encode(fPort, obj) { // Used for ChirpStack (aka LoRa Network Server)
   var PROTOCOL_VERSION_1 = 1;
   var PROTOCOL_VERSION_2 = 2;
 
-  var MSG_BASE_CONFIG         = 5;
-  var MSG_SENSOR_CONFIG       = 6;
-  var MSG_SENSOR_DATA_CONFIG  = 7;
+  var MSG_BASE_CONFIG = 5;
+  var MSG_SENSOR_CONFIG = 6;
+  var MSG_SENSOR_DATA_CONFIG = 7;
 
   switch (obj.header.protocol_version) {
     case PROTOCOL_VERSION_1:
     case PROTOCOL_VERSION_2:
-    {
-      switch (obj.header.message_type) {
-        case "base_configuration": {
-          encode_header(bytes, MSG_BASE_CONFIG, obj.header.protocol_version);
-          encode_base_config(bytes, obj);
-          encode_uint16(bytes, calc_crc(bytes.slice(1)));
+      {
+        switch (obj.header.message_type) {
+          case "base_configuration": {
+            encode_header(bytes, MSG_BASE_CONFIG, obj.header.protocol_version);
+            encode_base_config(bytes, obj);
+            encode_uint16(bytes, calc_crc(bytes.slice(1)));
 
-          break;
-        }
-        case "sensor_configuration": {
-          switch (obj.device_type) {
-            case "vb":
-              encode_header(bytes, MSG_SENSOR_CONFIG, obj.header.protocol_version);
-              encode_vb_sensor_config(bytes, obj);
-              encode_uint16(bytes, calc_crc(bytes.slice(1)));
-
-              break;
-            default:
-              throw new Error("Invalid device type!");
+            break;
           }
-          break;
-        }
-        case "sensor_data_configuration": {
-          switch (obj.device_type) {
-            case "vb":
-              encode_header(bytes, MSG_SENSOR_DATA_CONFIG, obj.header.protocol_version);
-              switch (obj.header.protocol_version) {
-                case PROTOCOL_VERSION_1:
-                  encode_vb_sensor_data_config_v1(bytes, obj);
-                  break;
-                case PROTOCOL_VERSION_2:
-                  encode_vb_sensor_data_config_v2(bytes, obj);
-                  break;
-                default:
-                  throw new Error("Protocol version is not suppported!");
-              }
-              encode_uint16(bytes, calc_crc(bytes.slice(1)));
+          case "sensor_configuration": {
+            switch (obj.device_type) {
+              case "vb":
+                encode_header(bytes, MSG_SENSOR_CONFIG, obj.header.protocol_version);
+                encode_vb_sensor_config(bytes, obj);
+                encode_uint16(bytes, calc_crc(bytes.slice(1)));
 
-              break;
-            default:
-              throw new Error("Invalid device type!");
+                break;
+              default:
+                throw new Error("Invalid device type!");
+            }
+            break;
           }
-          break;
+          case "sensor_data_configuration": {
+            switch (obj.device_type) {
+              case "vb":
+                encode_header(bytes, MSG_SENSOR_DATA_CONFIG, obj.header.protocol_version);
+                switch (obj.header.protocol_version) {
+                  case PROTOCOL_VERSION_1:
+                    encode_vb_sensor_data_config_v1(bytes, obj);
+                    break;
+                  case PROTOCOL_VERSION_2:
+                    encode_vb_sensor_data_config_v2(bytes, obj);
+                    break;
+                  default:
+                    throw new Error("Protocol version is not supported!");
+                }
+                encode_uint16(bytes, calc_crc(bytes.slice(1)));
+
+                break;
+              default:
+                throw new Error("Invalid device type!");
+            }
+            break;
+          }
+          default:
+            throw new Error("Invalid message type!");
         }
-        default:
-          throw new Error("Invalid message type!");
+        break;
       }
-      break;
-    }
     default:
-      throw new Error("Protocol version is not suppported!");
+      throw new Error("Protocol version is not supported!");
   }
 
   return bytes;
@@ -159,20 +163,22 @@ function encode_base_config(bytes, obj) {
     throw new Error("Missing number_of_unconfirmed_messages OR unconfirmed_repeat parameter");
   }
 
-  if (number_of_unconfirmed_messages < 1 || number_of_unconfirmed_messages > 5) {
+  if (typeof obj.bypass_sanity_check == "undefined" || obj.bypass_sanity_check == false) {
+    if (number_of_unconfirmed_messages < 1 || number_of_unconfirmed_messages > 5) {
       throw new Error("number_of_unconfirmed_messages is outside of specification: " + obj.number_of_unconfirmed_messages);
-  }
-  if (obj.communication_max_retries < 1) {
+    }
+    if (obj.communication_max_retries < 1) {
       throw new Error("communication_max_retries is outside specification: " + obj.communication_max_retries);
-  }
-  if (obj.status_message_interval_seconds < 60 || obj.status_message_interval_seconds > 604800) {
+    }
+    if (obj.status_message_interval_seconds < 60 || obj.status_message_interval_seconds > 604800) {
       throw new Error("status_message_interval_seconds is outside specification: " + obj.status_message_interval_seconds);
-  }
-  if (obj.lora_failure_holdoff_count < 0 || obj.lora_failure_holdoff_count > 255) {
+    }
+    if (obj.lora_failure_holdoff_count < 0 || obj.lora_failure_holdoff_count > 255) {
       throw new Error("lora_failure_holdoff_count is outside specification: " + obj.lora_failure_holdoff_count);
-  }
-  if (obj.lora_system_recover_count < 0 || obj.lora_system_recover_count > 255) {
+    }
+    if (obj.lora_system_recover_count < 0 || obj.lora_system_recover_count > 255) {
       throw new Error("lora_system_recover_count is outside specification: " + obj.lora_system_recover_count);
+    }
   }
   encode_base_config_switch(bytes, obj.switch_mask);
   encode_uint8(bytes, obj.communication_max_retries);             // Unit: -
@@ -338,7 +344,7 @@ function encode_header(bytes, message_type_id, protocol_version) {
 
 // helper function to encode device type
 function encode_device_type(bytes, type) {
-  switch (type){
+  switch (type) {
     case 'ts':
       encode_uint8(bytes, 1);
       break;
@@ -366,7 +372,7 @@ function encode_device_type(bytes, type) {
 // helper function to encode event.mode
 function encode_events_mode(bytes, mode) {
   // Check mode
-  switch (mode){
+  switch (mode) {
     case 'rms_velocity_x':
       encode_uint8(bytes, 1);
       break;
@@ -400,8 +406,7 @@ function encode_calculation_trigger(bytes, calculation_trigger) {
     typeof calculation_trigger.on_event == "boolean"
     && typeof calculation_trigger.on_threshold == "boolean"
     && typeof calculation_trigger.on_button_press == "boolean"
-  ))
-  {
+  )) {
     throw new Error('calculation_trigger must contain: on_event, on_threshold and on_button_press boolean fields');
   }
 
@@ -415,8 +420,7 @@ function encode_calculation_trigger(bytes, calculation_trigger) {
 // helper function to encode fft trigger threshold
 function encode_fft_trigger_threshold(bytes, unit, frequency, magnitude) {
   var trigger;
-  switch (unit)
-  {
+  switch (unit) {
     case "velocity":
       trigger = 0;
       break;
@@ -465,8 +469,7 @@ function encode_fft_selection(bytes, obj) {
       throw new Error("selection.resolution must one of 'low_res' or 'high_res'")
   }
 
-  if (typeof obj.enable_hanning_window != "boolean")
-  {
+  if (typeof obj.enable_hanning_window != "boolean") {
     throw new Error('selection.enable_hanning_window must be a boolean');
   }
   var enable_hanning_window = obj.enable_hanning_window ? 1 : 0;
@@ -557,24 +560,33 @@ function encode_int8(bytes, value) {
 
 // helper function to encode 6 bit scientific notation
 function encode_sci_6(bytes, scale) {
-    scale_power = Math.floor(Math.log10(scale));
+  // Get power component of scientific notation
+  scale_power = Number(scale.toExponential().split('e')[1]);
+
+  // Clip power value based on range
+  if (scale_power < -2)
+    scale_power = -2;
+  if (scale_power > 1)
+    scale_power = 1;
+
+  // Calculate coefficient
+  scale_coefficient = scale / Math.pow(10, scale_power);
+
+  // Check for rounding and coefficient range
+  if (scale_coefficient != Math.floor(scale_coefficient) || scale_coefficient < 1 || scale_coefficient > 15) {
+    // Decrease power to avoid coefficient rounding
+    scale_power = scale_power - 1
     scale_coefficient = scale / Math.pow(10, scale_power);
-    if (scale_coefficient != Math.floor(scale_coefficient) || scale_coefficient < 1 || scale_coefficient > 15)
-    {
-      // try one power less
-      scale_power = scale_power - 1
-      scale_coefficient = scale / Math.pow(10, scale_power);
-      if (scale_coefficient != Math.floor(scale_coefficient) || scale_coefficient < 1 || scale_coefficient > 15)
-      {
-        throw new Error("Coeffiecient must be between 1 .. 15")
-      }
+
+    // Final check
+    if (scale_coefficient < 1 || scale_coefficient > 15 || scale_power < -2 || scale_power > 1) {
+      throw new Error("Out of bound, scale: " + scale_power + ", coefficient: " + scale_coefficient);
     }
+  }
 
-    if (scale_power < -2 || scale_power > 1) throw new Error("Power must be between -2 .. 1")
-
-    power = ((scale_power + 2) & 0x03) << 4;
-    coefficient = scale_coefficient & 0x0F;
-    bytes.push(coefficient | power);
+  power = ((scale_power + 2) & 0x03) << 4;
+  coefficient = scale_coefficient & 0x0F;
+  bytes.push(coefficient | power);
 }
 
 // calc_crc inspired by https://github.com/SheetJS/js-crc32
