@@ -1,6 +1,6 @@
 /**
- * Filename          : encoder_vb_doc-E_rev-4.js
- * Latest commit     : 14744408
+ * Filename          : encoder_vb_doc-E_rev-5.js
+ * Latest commit     : 70b3fdc0
  * Protocol document : E
  *
  * Release History
@@ -22,7 +22,10 @@
  * - Fixed the parsing of unconfirmed_repeat to number_of_unconfirmed_messages
  *
  * 2022-07-12 revision 4
- * - Fixed encode_sci_6 by making sure the scale_power is clipped to the available range
+ * - Fixed encode_sci_6 by making sure the power is clipped to the available range
+ *
+ * 2022-07-25 revision 5
+ * - Fixed encode_sci_6 to allow it to try to round the coefficient of the scientific number.
  *
  * YYYY-MM-DD revision X
  * -
@@ -561,32 +564,50 @@ function encode_int8(bytes, value) {
 // helper function to encode 6 bit scientific notation
 function encode_sci_6(bytes, scale) {
   // Get power component of scientific notation
-  scale_power = Number(scale.toExponential().split('e')[1]);
+  // Range: -2 .. 1
+  power = Number(scale.toExponential().split('e')[1]);
 
   // Clip power value based on range
-  if (scale_power < -2)
-    scale_power = -2;
-  if (scale_power > 1)
-    scale_power = 1;
+  if (power < -2)
+    power = -2;
+  if (power > 1)
+    power = 1;
 
   // Calculate coefficient
-  scale_coefficient = scale / Math.pow(10, scale_power);
+  // Range: 1 .. 15
+  coeff = Math.round(scale / Math.pow(10, power));
+  coeff_err_0 = Math.abs(scale - (coeff * Math.pow(10, power)));
 
-  // Check for rounding and coefficient range
-  if (scale_coefficient != Math.floor(scale_coefficient) || scale_coefficient < 1 || scale_coefficient > 15) {
-    // Decrease power to avoid coefficient rounding
-    scale_power = scale_power - 1
-    scale_coefficient = scale / Math.pow(10, scale_power);
+  // See if we can increase resolution by decreasing power
+  if (coeff_err_0 != 0 && power != -2) {
+    // Recalculate notation based on decreased power
+    power_down = power - 1;
+    coeff_down = scale / Math.pow(10, power_down);
 
-    // Final check
-    if (scale_coefficient < 1 || scale_coefficient > 15 || scale_power < -2 || scale_power > 1) {
-      throw new Error("Out of bound, scale: " + scale_power + ", coefficient: " + scale_coefficient);
+    // Clip power value based on range
+    // Range: 1 .. 15
+    if (coeff_down < 1)
+      coeff_down = 1;
+    if (coeff_down > 15)
+      coeff_down = 15;
+
+    coeff_err_1 = Math.abs(scale - (coeff_down * Math.pow(10, power_down)));
+
+    if (coeff_err_1 < coeff_err_0 && coeff_down >= 1 && coeff_down <= 15) {
+      // Use the new notation if coefficient is within range
+      power = power_down;
+      coeff = coeff_down;
     }
   }
 
-  power = ((scale_power + 2) & 0x03) << 4;
-  coefficient = scale_coefficient & 0x0F;
-  bytes.push(coefficient | power);
+  // Final check
+  if (coeff < 1 || coeff > 15 || power < -2 || power > 1) {
+    throw new Error("Out of bound, power: " + power + ", coefficient: " + coeff);
+  }
+
+  power = ((power + 2) & 0x03) << 4;
+  coeff = coeff & 0x0F;
+  bytes.push(coeff | power);
 }
 
 // calc_crc inspired by https://github.com/SheetJS/js-crc32
