@@ -1,7 +1,7 @@
 /**
- * Filename          : encoder_vb_doc-E_rev-6.js
- * Latest commit     : 02564d40
- * Protocol document : E
+ * Filename          : encoder_vb_doc-F_rev-6.js
+ * Latest commit     : b4ca8f1f
+ * Protocol document : F
  *
  * Release History
  *
@@ -37,6 +37,8 @@
  * -- Uses ThingPark as default entry point where fPort is not an input but an output.
  *
  * YYYY-MM-DD revision X
+ * -
+ *
  */
 
 if (typeof module !== 'undefined') {

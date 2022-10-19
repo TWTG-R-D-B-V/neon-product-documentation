@@ -1,7 +1,7 @@
 /**
- * Filename          : decoder_vb_doc-E_rev-5.js
- * Latest commit     : 02564d40
- * Protocol document : E
+ * Filename          : decoder_vb_doc-F_rev-5.js
+ * Latest commit     : b4ca8f1f
+ * Protocol document : F
  *
  * Release History
  *
@@ -33,6 +33,7 @@
  * -- Added entry point for ThingPark
  *
  * YYYY-MM-DD revision X
+ * -
  *
  */
 

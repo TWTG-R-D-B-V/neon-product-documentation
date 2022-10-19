@@ -10,8 +10,8 @@ The current page is for the latest version. Other versions can be found via the 
 
 | Batch  | LD serial number example  | VB serial number example  | Protocol version  |
 |---|---|---|---:|
-| AA  | LD 01 20 **AA** 00001 | VB 01 20 **AA** 00001 | VB protocol v2 |
-| AB  | LD 01 21 **AA** 00001 | VB 01 21 **AB** 00001 | VB protocol v2 |
+| AA  | LD 02 20 **AA** 00001 | VB 01 20 **AA** 00001 | VB protocol v3 |
+| AB  | LD 02 21 **AA** 00001 | VB 01 21 **AB** 00001 | VB protocol v3 |
 
 ### Online configurator
 
@@ -52,345 +52,447 @@ The encoder/decoder script names are postfixed with version information:
 The examles below are generated using the example Javascript files in the example folder using [nodejs](https://nodejs.org/) (a Linux application to execute Javascript files).
 
 ##### Encoding
+###### Base config message (Default)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "base",
+        "protocol_version": 3,
+        "tag": "0x096c4970",
+        "payload": {
+            "switch_mask": {
+                "enable_confirmed_event_message": true,
+                "enable_confirmed_data_message": true,
+                "allow_deactivation": true
+            },
+            "periodic_message_random_delay_seconds": 31,
+            "status_message_interval": "5 days"
+        }
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+3070496c0907ff
+```
+Bytestring (base64):
+```
+MHBJbAkH/w==
+```
+###### Base config message (No payload)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "base",
+        "protocol_version": 3
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+30
+```
+Bytestring (base64):
+```
+MA==
+```
+###### Base config message (Alternative)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "base",
+        "protocol_version": 3,
+        "tag": "0x00000000",
+        "payload": {
+            "switch_mask": {
+                "enable_confirmed_event_message": true,
+                "enable_confirmed_data_message": false,
+                "allow_deactivation": true
+            },
+            "periodic_message_random_delay_seconds": 17,
+            "status_message_interval": "2 days"
+        }
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+300000000005d1
+```
+Bytestring (base64):
+```
+MAAAAAAF0Q==
+```
+###### Sensor config message (Default)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "sensor",
+        "protocol_version": 3,
+        "tag": "0xfd77daf2",
+        "payload": {
+            "device_type": "vb",
+            "switch_mask": {
+                "selection": "avg_only"
+            },
+            "measurement_interval_minutes": 15,
+            "periodic_event_message_interval": 16,
+            "frequency_range": {
+                "rms_velocity": "range_2",
+                "peak_acceleration": "range_2"
+            }
+        }
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+33f2da77fd06030f100003
+```
+Bytestring (base64):
+```
+M/Lad/0GAw8QAAM=
+```
+###### Sensor config message (No payload)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "sensor",
+        "protocol_version": 3
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+33
+```
+Bytestring (base64):
+```
+Mw==
+```
+###### Sensor config message (Alternative)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "sensor",
+        "protocol_version": 3,
+        "tag": "0x00000000",
+        "payload": {
+            "device_type": "vb",
+            "switch_mask": {
+                "selection": "extended"
+            },
+            "measurement_interval_minutes": 15,
+            "periodic_event_message_interval": 16,
+            "frequency_range": {
+                "rms_velocity": "range_1",
+                "peak_acceleration": "range_2"
+            }
+        }
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+330000000006000f100002
+```
+Bytestring (base64):
+```
+MwAAAAAGAA8QAAI=
+```
+###### Sensor conditions config message (Default)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "sensor_conditions",
+        "protocol_version": 3,
+        "tag": "0x83327baf",
+        "payload": {
+            "device_type": "vb",
+            "event_conditions": [
+                {
+                    "mode": "off"
+                },
+                {
+                    "mode": "off"
+                },
+                {
+                    "mode": "off"
+                },
+                {
+                    "mode": "off"
+                },
+                {
+                    "mode": "off"
+                },
+                {
+                    "mode": "off"
+                }
+            ]
+        }
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+35af7b32830600000000000000000000
+```
+Bytestring (base64):
+```
+Na97MoMGAAAAAAAAAAAAAA==
+```
+###### Sensor conditions config message (No Payload)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "sensor_conditions",
+        "protocol_version": 3
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+35
+```
+Bytestring (base64):
+```
+NQ==
+```
+###### Sensor conditions config message (Alternative)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "sensor_conditions",
+        "protocol_version": 3,
+        "tag": "0x00000000",
+        "payload": {
+            "device_type": "vb",
+            "event_conditions": [
+                {
+                    "mode": "rms_velocity_x",
+                    "mode_value": 0
+                },
+                {
+                    "mode": "peak_acceleration_x",
+                    "mode_value": 0.5
+                },
+                {
+                    "mode": "rms_velocity_y",
+                    "mode_value": 0.4
+                },
+                {
+                    "mode": "peak_acceleration_y",
+                    "mode_value": 0.1
+                },
+                {
+                    "mode": "peak_acceleration_z",
+                    "mode_value": 0.3
+                }
+            ]
+        }
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+35000000000600100520043001400360
+```
+Bytestring (base64):
+```
+NQAAAAAGABAFIAQwAUADYA==
+```
+###### Sensor data config message (Default)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "sensor_data",
+        "protocol_version": 3,
+        "tag": "0xeec823eb",
+        "payload": {
+            "device_type": "vb",
+            "calculation_trigger": {
+                "on_event": false,
+                "on_threshold": false,
+                "on_button_press": false
+            },
+            "calculation_interval": 1440,
+            "fragment_message_interval": 60,
+            "threshold_window": 10,
+            "trigger_thresholds": [
+                {
+                    "unit": "velocity",
+                    "frequency": 0,
+                    "magnitude": 0
+                },
+                {
+                    "unit": "velocity",
+                    "frequency": 0,
+                    "magnitude": 0
+                },
+                {
+                    "unit": "velocity",
+                    "frequency": 0,
+                    "magnitude": 0
+                },
+                {
+                    "unit": "velocity",
+                    "frequency": 0,
+                    "magnitude": 0
+                },
+                {
+                    "unit": "velocity",
+                    "frequency": 0,
+                    "magnitude": 0
+                }
+            ],
+            "selection": {
+                "axis": "z",
+                "resolution": "low_res",
+                "enable_hanning_window": false
+            },
+            "frequency": {
+                "span": {
+                    "velocity": {
+                        "start": 3,
+                        "stop": 126
+                    },
+                    "acceleration": {
+                        "start": 61,
+                        "stop": 4096
+                    }
+                },
+                "resolution": {
+                    "velocity": 1,
+                    "acceleration": 2
+                }
+            },
+            "scale": {
+                "velocity": 1,
+                "acceleration": 40
+            }
+        }
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+34eb23c8ee0600a0053c000500000000000000000000000000000000000000000203007e003d00001001022134
+```
+Bytestring (base64):
+```
+NOsjyO4GAKAFPAAFAAAAAAAAAAAAAAAAAAAAAAAAAAACAwB+AD0AABABAiE0
+```
+###### Sensor data config message (No payload)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "sensor_data",
+        "protocol_version": 3
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+34
+```
+Bytestring (base64):
+```
+NA==
+```
+###### Sensor data config message (Alternative)
+JSON:
+```json
+{
+    "config_update_req": {
+        "config_type": "sensor_data",
+        "protocol_version": 3,
+        "tag": "0x00000000",
+        "payload": {
+            "device_type": "vb",
+            "calculation_trigger": {
+                "on_event": false,
+                "on_threshold": false,
+                "on_button_press": false
+            },
+            "calculation_interval": 5,
+            "fragment_message_interval": 60,
+            "threshold_window": 10,
+            "trigger_thresholds": [
+                {
+                    "unit": "velocity",
+                    "frequency": 1,
+                    "magnitude": 2
+                },
+                {
+                    "unit": "velocity",
+                    "frequency": 3,
+                    "magnitude": 4
+                },
+                {
+                    "unit": "velocity",
+                    "frequency": 5,
+                    "magnitude": 6
+                },
+                {
+                    "unit": "velocity",
+                    "frequency": 7,
+                    "magnitude": 8
+                },
+                {
+                    "unit": "velocity",
+                    "frequency": 9,
+                    "magnitude": 10
+                }
+            ],
+            "selection": {
+                "axis": "z",
+                "resolution": "low_res",
+                "enable_hanning_window": false
+            },
+            "frequency": {
+                "span": {
+                    "velocity": {
+                        "start": 3,
+                        "stop": 126
+                    },
+                    "acceleration": {
+                        "start": 61,
+                        "stop": 4096
+                    }
+                },
+                "resolution": {
+                    "velocity": 1,
+                    "acceleration": 2
+                }
+            },
+            "scale": {
+                "velocity": 1,
+                "acceleration": 40
+            }
+        }
+    }
+}
+```
+Bytestring (hexidecimal):
+```
+3400000000060005003c00050200c800060090010a0058020e0020031200e8030203007e003d00001001022134
+```
+Bytestring (base64):
+```
+NAAAAAAGAAUAPAAFAgDIAAYAkAEKAFgCDgAgAxIA6AMCAwB+AD0AABABAiE0
+```
 
-Generated by:
-```
-nodejs examples/encoder-vb-examples.js
-```
-###### Base config message (EU868)
-JSON:
-```json
-{
-    "header": {
-        "message_type": "base_configuration",
-        "protocol_version": 2
-    },
-    "switch_mask": {
-        "enable_confirmed_event_message": true,
-        "enable_confirmed_data_message": false,
-        "allow_deactivation": true
-    },
-    "communication_max_retries": 3,
-    "unconfirmed_repeat": 1,
-    "periodic_message_random_delay_seconds": 60,
-    "status_message_interval_seconds": 86400,
-    "status_message_confirmed_interval": 1,
-    "lora_failure_holdoff_count": 2,
-    "lora_system_recover_count": 1,
-    "lorawan_fsb_mask": [
-        "0x0000",
-        "0x0000",
-        "0x0000",
-        "0x0000",
-        "0x0000"
-    ]
-}
-```
-Bytestring (hexidecimal):
-```
-250903013ca00501020100000000000000000000d513
-```
-Bytestring (base64):
-```
-JQkDATygBQECAQAAAAAAAAAAAADVEw==
-```
-###### Base config message (US915)
-JSON:
-```json
-{
-    "header": {
-        "message_type": "base_configuration",
-        "protocol_version": 2
-    },
-    "switch_mask": {
-        "enable_confirmed_event_message": true,
-        "enable_confirmed_data_message": false,
-        "allow_deactivation": true
-    },
-    "communication_max_retries": 3,
-    "unconfirmed_repeat": 1,
-    "periodic_message_random_delay_seconds": 60,
-    "status_message_interval_seconds": 86400,
-    "status_message_confirmed_interval": 1,
-    "lora_failure_holdoff_count": 2,
-    "lora_system_recover_count": 1,
-    "lorawan_fsb_mask": [
-        "0x00FF",
-        "0x0000",
-        "0x0000",
-        "0x0000",
-        "0x0000"
-    ]
-}
-```
-Bytestring (hexidecimal):
-```
-250903013ca005010201ff000000000000000000c1c4
-```
-Bytestring (base64):
-```
-JQkDATygBQECAf8AAAAAAAAAAADBxA==
-```
-###### Sensor config message (default)
-JSON:
-```json
-{
-    "header": {
-        "message_type": "sensor_configuration",
-        "protocol_version": 2
-    },
-    "device_type": "vb",
-    "measurement_interval_seconds": 900,
-    "periodic_event_message_interval": 16,
-    "frequency_range": {
-        "rms_velocity": "range_2",
-        "peak_acceleration": "range_2"
-    },
-    "events": [
-        {
-            "mode": "off",
-            "mode_value": 0
-        },
-        {
-            "mode": "off",
-            "mode_value": 0
-        },
-        {
-            "mode": "off",
-            "mode_value": 0
-        },
-        {
-            "mode": "off",
-            "mode_value": 0
-        },
-        {
-            "mode": "off",
-            "mode_value": 0
-        },
-        {
-            "mode": "off",
-            "mode_value": 0
-        }
-    ]
-}
-```
-Bytestring (hexidecimal):
-```
-2606840310000300000000000000000000000000000000000079cd
-```
-Bytestring (base64):
-```
-JgaEAxAAAwAAAAAAAAAAAAAAAAAAAAAAAHnN
-```
-###### Sensor config message (alternative)
-JSON:
-```json
-{
-    "header": {
-        "message_type": "sensor_configuration",
-        "protocol_version": 2
-    },
-    "device_type": "vb",
-    "measurement_interval_seconds": 3600,
-    "periodic_event_message_interval": 1,
-    "frequency_range": {
-        "rms_velocity": "range_2",
-        "peak_acceleration": "range_1"
-    },
-    "events": [
-        {
-            "mode": "rms_velocity_x",
-            "mode_value": 0.05
-        },
-        {
-            "mode": "rms_velocity_y",
-            "mode_value": 99.99
-        },
-        {
-            "mode": "peak_acceleration_z",
-            "mode_value": 0.01
-        },
-        {
-            "mode": "peak_acceleration_x",
-            "mode_value": 200
-        },
-        {
-            "mode": "off",
-            "mode_value": 0
-        },
-        {
-            "mode": "off",
-            "mode_value": 0
-        }
-    ]
-}
-```
-Bytestring (hexidecimal):
-```
-2606100e010001010500030f2706010002204e0000000000001e69
-```
-Bytestring (base64):
-```
-JgYQDgEAAQEFAAMPJwYBAAIgTgAAAAAAAB5p
-```
-###### Sensor data config message (default)
-JSON:
-```json
-{
-    "header": {
-        "message_type": "sensor_data_configuration",
-        "protocol_version": 2
-    },
-    "device_type": "vb",
-    "calculation_trigger": {
-        "on_event": false,
-        "on_threshold": false,
-        "on_button_press": false
-    },
-    "calculation_interval": 0,
-    "fragment_message_interval": 14400,
-    "threshold_window": 10,
-    "trigger_thresholds": [
-        {
-            "unit": "velocity",
-            "frequency": 0,
-            "magnitude": 0
-        },
-        {
-            "unit": "velocity",
-            "frequency": 0,
-            "magnitude": 0
-        },
-        {
-            "unit": "velocity",
-            "frequency": 0,
-            "magnitude": 0
-        },
-        {
-            "unit": "velocity",
-            "frequency": 0,
-            "magnitude": 0
-        },
-        {
-            "unit": "velocity",
-            "frequency": 0,
-            "magnitude": 0
-        }
-    ],
-    "selection": {
-        "axis": "z",
-        "resolution": "low_res",
-        "enable_hanning_window": true
-    },
-    "frequency": {
-        "span": {
-            "velocity": {
-                "start": 3,
-                "stop": 126
-            },
-            "acceleration": {
-                "start": 61,
-                "stop": 4096
-            }
-        },
-        "resolution": {
-            "velocity": 1,
-            "acceleration": 2
-        }
-    },
-    "scale": {
-        "velocity": 4,
-        "acceleration": 40
-    }
-}
-```
-Bytestring (hexidecimal):
-```
-270600000040380500000000000000000000000000000000000000000a03007e003d000010010224345128
-```
-Bytestring (base64):
-```
-JwYAAABAOAUAAAAAAAAAAAAAAAAAAAAAAAAAAAoDAH4APQAAEAECJDRRKA==
-```
-###### Sensor data config message (alternative)
-JSON:
-```json
-{
-    "header": {
-        "message_type": "sensor_data_configuration",
-        "protocol_version": 2
-    },
-    "device_type": "vb",
-    "calculation_trigger": {
-        "on_event": false,
-        "on_threshold": true,
-        "on_button_press": true
-    },
-    "calculation_interval": 0,
-    "fragment_message_interval": 14400,
-    "threshold_window": 10,
-    "trigger_thresholds": [
-        {
-            "unit": "velocity",
-            "frequency": 100,
-            "magnitude": 200
-        },
-        {
-            "unit": "acceleration",
-            "frequency": 100,
-            "magnitude": 67.89
-        },
-        {
-            "unit": "acceleration",
-            "frequency": 4000,
-            "magnitude": 123.45
-        },
-        {
-            "unit": "velocity",
-            "frequency": 0,
-            "magnitude": 0
-        },
-        {
-            "unit": "velocity",
-            "frequency": 0,
-            "magnitude": 0
-        }
-    ],
-    "selection": {
-        "axis": "z",
-        "resolution": "low_res",
-        "enable_hanning_window": true
-    },
-    "frequency": {
-        "span": {
-            "velocity": {
-                "start": 3,
-                "stop": 126
-            },
-            "acceleration": {
-                "start": 61,
-                "stop": 4096
-            }
-        },
-        "resolution": {
-            "velocity": 1,
-            "acceleration": 2
-        }
-    },
-    "scale": {
-        "velocity": 4,
-        "acceleration": 40
-    }
-}
-```
-Bytestring (hexidecimal):
-```
-2706060000403805c800204ec900851a411f393000000000000000000a03007e003d0000100102243425ee
-```
-Bytestring (base64):
-```
-JwYGAABAOAXIACBOyQCFGkEfOTAAAAAAAAAAAAoDAH4APQAAEAECJDQl7g==
-```
 ##### Decoding
 
 Generated by:
@@ -401,131 +503,103 @@ nodejs examples/decoder-vb-examples.js
 ###### Boot message
 Bytestring (hexidecimal):
 ```
-20050df0ad8b34120c030344332211ffffffffff060102030405dec0edfebbaa55440a04040807060504030201ee
+310103
 ```
 JSON:
 ```json
 {
-    "header": {
-        "protocol_version": 2,
-        "message_type": "boot"
-    },
     "boot": {
         "base": {
-            "device_type": "ld",
-            "version_hash": "0x8BADF00D",
-            "config_crc": "0x1234",
-            "reset_flags": "0x0C",
-            "reboot_counter": 3,
-            "reboot_info": "assert (caller: 0x11223344; value: -1)",
-            "bist": "0xFF"
+            "reboot_reason": {
+                "major": "config update",
+                "minor": "success"
+            }
         },
         "sensor": {
-            "device_type": "vb",
-            "device_id": "1-0084148994",
-            "version_hash": "0xFEEDC0DE",
-            "config_crc": "0xAABB",
-            "data_config_crc": "0x4455",
-            "reset_flags": "0x0A",
-            "reboot_counter": 4,
-            "reboot_info": "application (0x05060708)",
-            "bist": "0xEE"
-        }
+            "reboot_reason": {
+                "major": "button reset",
+                "minor": ""
+            }
+        },
+        "protocol_version": 3
     }
 }
 ```
 ###### Activated message
 Bytestring (hexidecimal):
 ```
-21060801020304
+3506080102030405
 ```
 JSON:
 ```json
 {
-    "header": {
-        "protocol_version": 2,
-        "message_type": "activated"
-    },
     "activated": {
         "sensor": {
             "device_type": "vb",
             "device_id": "8-0067305985"
-        }
+        },
+        "base": {
+            "device_type": "ld"
+        },
+        "protocol_version": 3
     }
 }
 ```
 ###### Deactivated message
 Bytestring (hexidecimal):
 ```
-220200
+360200
 ```
 JSON:
 ```json
 {
-    "header": {
-        "protocol_version": 2,
-        "message_type": "deactivated"
-    },
     "deactivated": {
-        "reason": "activation_sensor_comm_fail"
+        "reason": "activation_sensor_comm_fail",
+        "protocol_version": 3
     }
 }
 ```
-###### Device status message (pattern)
+###### Device status message
 Bytestring (hexidecimal):
 ```
-24edfe0b000c000d00151617020304050606dec037130107
+327515030002060107
 ```
 JSON:
 ```json
 {
-    "header": {
-        "protocol_version": 2,
-        "message_type": "device_status"
-    },
     "device_status": {
         "base": {
-            "config_crc": "0xFEED",
-            "battery_voltage": {
-                "low": 0.011,
-                "high": 0.012,
-                "settle": 0.013
-            },
-            "temperature": {
-                "min": 21,
-                "max": 22,
-                "avg": 23
-            },
-            "lvds_error_counter": 2,
+            "battery_voltage": 2.9176470588235293,
+            "temperature": 21,
             "lora_tx_counter": 3,
-            "avg_rssi": -4,
-            "avg_snr": 5,
+            "avg_rssi": "-100..-129",
             "bist": "0x06"
         },
         "sensor": {
-            "device_type": "vb",
-            "config_crc": "0xC0DE",
-            "data_config_crc": "0x1337",
             "event_counter": 1,
             "bist": "0x07"
-        }
+        },
+        "protocol_version": 3
     }
 }
 ```
-###### Application event message
+###### Sensor event message
 Bytestring (hexidecimal):
 ```
-23010100d20488130200d30487130300d40486130400d50485130500d60484130600d704831361f0d204401f15
+3300950100d20488130200d30487130300d40486130400d50485130500d60484130600d704831361f0d204401f
 ```
 JSON:
 ```json
 {
-    "header": {
-        "protocol_version": 2,
-        "message_type": "sensor_event"
-    },
     "sensor_event": {
-        "trigger": "button",
+        "selection": "extended",
+        "condition_0": 1,
+        "condition_1": 0,
+        "condition_2": 1,
+        "condition_3": 0,
+        "condition_4": 1,
+        "condition_5": 0,
+        "trigger": "button press",
         "rms_velocity": {
             "x": {
                 "min": 0.01,
@@ -565,34 +639,25 @@ JSON:
             "max": 12.34,
             "avg": 80
         },
-        "condition_0": 1,
-        "condition_1": 0,
-        "condition_2": 1,
-        "condition_3": 0,
-        "condition_4": 1,
-        "condition_5": 0
+        "protocol_version": 3
     }
 }
 ```
-###### Application data message
+###### Sensor data message
 Bytestring (hexidecimal):
 ```
-282bf94506020102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728
+342b994406020102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728
 ```
 JSON:
 ```json
 {
-    "header": {
-        "protocol_version": 2,
-        "message_type": "sensor_data"
-    },
     "sensor_data": {
         "config": {
             "frame_number": 43,
             "sequence_number": 1,
             "axis": "z",
             "unit": "acceleration",
-            "scale": 15,
+            "scale": 4,
             "start_frequency": 200,
             "spectral_line_frequency": 2
         },
@@ -681,47 +746,112 @@ JSON:
             6051.4911600000005
         ],
         "magnitude": [
-            0.058823529411764705,
-            0.11764705882352941,
-            0.17647058823529413,
+            0.01568627450980392,
+            0.03137254901960784,
+            0.047058823529411764,
+            0.06274509803921569,
+            0.0784313725490196,
+            0.09411764705882353,
+            0.10980392156862745,
+            0.12549019607843137,
+            0.1411764705882353,
+            0.1568627450980392,
+            0.17254901960784313,
+            0.18823529411764706,
+            0.20392156862745098,
+            0.2196078431372549,
             0.23529411764705882,
-            0.29411764705882354,
-            0.35294117647058826,
-            0.4117647058823529,
+            0.25098039215686274,
+            0.26666666666666666,
+            0.2823529411764706,
+            0.2980392156862745,
+            0.3137254901960784,
+            0.32941176470588235,
+            0.34509803921568627,
+            0.3607843137254902,
+            0.3764705882352941,
+            0.39215686274509803,
+            0.40784313725490196,
+            0.4235294117647059,
+            0.4392156862745098,
+            0.4549019607843137,
             0.47058823529411764,
-            0.5294117647058824,
-            0.5882352941176471,
-            0.6470588235294118,
-            0.7058823529411765,
-            0.7647058823529411,
-            0.8235294117647058,
-            0.8823529411764706,
-            0.9411764705882353,
-            1,
-            1.0588235294117647,
-            1.1176470588235294,
-            1.1764705882352942,
-            1.2352941176470589,
-            1.2941176470588236,
-            1.3529411764705883,
-            1.411764705882353,
-            1.4705882352941178,
-            1.5294117647058822,
-            1.588235294117647,
-            1.6470588235294117,
-            1.7058823529411764,
-            1.7647058823529411,
-            1.8235294117647058,
-            1.8823529411764706,
-            1.9411764705882353,
-            2,
-            2.0588235294117645,
-            2.1176470588235294,
-            2.176470588235294,
-            2.235294117647059,
-            2.2941176470588234,
-            2.3529411764705883
-        ]
+            0.48627450980392156,
+            0.5019607843137255,
+            0.5176470588235295,
+            0.5333333333333333,
+            0.5490196078431373,
+            0.5647058823529412,
+            0.5803921568627451,
+            0.596078431372549,
+            0.611764705882353,
+            0.6274509803921569
+        ],
+        "protocol_version": 3
+    }
+}
+```
+###### Base config answer
+Bytestring (hexidecimal):
+```
+37123456780b
+```
+JSON:
+```json
+{
+    "config_update_ans": {
+        "protocol_version": 3,
+        "config_type": "unknown",
+        "tag": "0x78563412",
+        "counter": 11
+    }
+}
+```
+###### Region config answer
+Bytestring (hexidecimal):
+```
+37123456780c
+```
+JSON:
+```json
+{
+    "config_update_ans": {
+        "protocol_version": 3,
+        "config_type": "unknown",
+        "tag": "0x78563412",
+        "counter": 12
+    }
+}
+```
+###### Sensor config answer
+Bytestring (hexidecimal):
+```
+37123456780e
+```
+JSON:
+```json
+{
+    "config_update_ans": {
+        "protocol_version": 3,
+        "config_type": "unknown",
+        "tag": "0x78563412",
+        "counter": 14
+    }
+}
+```
+###### Sensor conditions config answer
+Bytestring (hexidecimal):
+```
+37123456780f
+```
+JSON:
+```json
+{
+    "config_update_ans": {
+        "protocol_version": 3,
+        "config_type": "unknown",
+        "tag": "0x78563412",
+        "counter": 15
     }
 }
 ```
