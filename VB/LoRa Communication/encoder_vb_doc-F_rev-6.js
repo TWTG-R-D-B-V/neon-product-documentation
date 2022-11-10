@@ -1,6 +1,6 @@
 /**
  * Filename          : encoder_vb_doc-F_rev-6.js
- * Latest commit     : b4ca8f1f
+ * Latest commit     : 02cd34799
  * Protocol document : F
  *
  * Release History
@@ -33,7 +33,7 @@
  * -- Separated the sensor configuration into Sensor configuration and sensor conditions configuration
  * -- Separated base configuration into base configuration and Region configuration
  * -- Moved protocol_version into message body
- * -- Updated lorawan_fsb_mask representation to uint8
+ * -- Updated lorawan_fsb_mask representation to disable_switch to dedicate 1 bit to every band (8 channels)
  * -- Uses ThingPark as default entry point where fPort is not an input but an output.
  *
  * YYYY-MM-DD revision X
@@ -74,7 +74,6 @@ if (typeof module !== 'undefined') {
     encode_base_config_switch_v3: encode_base_config_switch_v3,
     encode_region_config_v3: encode_region_config_v3,
     encode_channel_plan_v3: encode_channel_plan_v3,
-    encode_lorawan_fsb_mask_v3: encode_lorawan_fsb_mask_v3,
     encode_vb_sensor_config_v3: encode_vb_sensor_config_v3,
     encode_vb_sensor_conditions_configuration_v3: encode_vb_sensor_conditions_configuration_v3,
     encode_event_condition_v3: encode_event_condition_v3,
@@ -545,7 +544,37 @@ function encode_region_config_v3(bytes, payload) {
   }
 
   encode_channel_plan_v3(bytes, payload.channel_plan);
-  encode_lorawan_fsb_mask_v3(bytes, payload.lorawan_fsb_mask);
+
+  // join_trials
+  if (payload.join_trials.holdoff_steps > 7) {
+    throw new Error("Hold off steps too large");
+  }
+  burst_min1 = (payload.join_trials.burst_count - 1) & 0xff;
+  if (burst_min1 > 31) {
+    throw new Error("Burst range 1..32");
+  }
+  join_trials = payload.join_trials.holdoff_hours_max & 0xff;
+  join_trials |= payload.join_trials.holdoff_steps << 8;
+  join_trials |= burst_min1 << 11;
+  encode_uint16(bytes, join_trials);
+
+  // disable_switch
+  disable_switch = payload.disable_switch.frequency_bands & 0x0FFF;
+  if ((disable_switch ^ 0x0FFF) == 0) {
+    throw new Error("Not disable all bands");
+  }
+  disable_switch |= payload.disable_switch.dwell_time ? 0x1000 : 0x0000;
+  encode_uint16(bytes, disable_switch);
+
+  encode_uint8(bytes, payload.rx1_delay &  0x0f);
+
+  // ADR
+  adr = payload.adr.mode;
+  adr |= (payload.adr.ack_limit_exp & 0x07) << 2;
+  adr |= (payload.adr.ack_delay_exp & 0x07) << 5;
+  encode_uint8(bytes, adr);
+
+  encode_int8(bytes, payload.max_tx_power);
 }
 
 function encode_vb_sensor_conditions_configuration_v3(bytes, payload) {
@@ -833,6 +862,9 @@ function encode_sensor_config_switch_mask_v3(bytes, bitmask) {
 
 // helper function to encode an uint32
 function encode_uint32(bytes, value) {
+  if (value == undefined) {
+    throw new Error("Variable undefined");
+  }
   bytes.push(value & mask_byte);
   bytes.push((value >> 8) & mask_byte);
   bytes.push((value >> 16) & mask_byte);
@@ -846,17 +878,26 @@ function encode_int32(bytes, value) {
 
 // helper function to encode an uint16
 function encode_uint16(bytes, value) {
+  if (value == undefined) {
+    throw new Error("Variable undefined");
+  }
   bytes.push(value & mask_byte);
   bytes.push((value >> 8) & mask_byte);
 }
 
 // helper function to encode an int16
 function encode_int16(bytes, value) {
+  if (value == undefined) {
+    throw new Error("Variable undefined");
+  }
   encode_uint16(bytes, value);
 }
 
 // helper function to encode an uint8
 function encode_uint8(bytes, value) {
+  if (value == undefined) {
+    throw new Error("Variable undefined");
+  }
   bytes.push(value & mask_byte);
 }
 
@@ -867,6 +908,9 @@ function encode_int8(bytes, value) {
 
 // helper function to encode 6 bit scientific notation
 function encode_sci_6(bytes, scale) {
+  if (scale == undefined) {
+    throw new Error("Variable undefined");
+  }
   // Get power component of scientific notation
   scale_power = Number(scale.toExponential().split('e')[1]);
 
@@ -1015,12 +1059,6 @@ function encode_channel_plan_v3(bytes, channel_plan) {
     }
     default:
       throw new Error("channel_plan outside of specification: " + obj.channel_plan);
-  }
-}
-
-function encode_lorawan_fsb_mask_v3(bytes, obj) {
-  for (idx = 0; idx < 12; idx++) {
-    encode_uint8(bytes, obj[idx]);
   }
 }
 

@@ -1,6 +1,6 @@
 /**
- * Filename          : decoder_vb_doc-F_rev-5.js
- * Latest commit     : b4ca8f1f
+ * Filename          : decoder_vb_doc-F_rev-6.js
+ * Latest commit     : 8519fb8aa
  * Protocol document : F
  *
  * Release History
@@ -31,6 +31,11 @@
  * -- Moved protocol_version into message body
  * -- Ignore null payload OR MAC uplink
  * -- Added entry point for ThingPark
+ * 
+ * 2022-11-10 revision 6
+ * - Removed 5th condition 
+ * - Used throw new Error instead of throw
+ * - For normal event message include selection in structure
  *
  * YYYY-MM-DD revision X
  * -
@@ -144,7 +149,7 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
             break;
 
           default:
-            throw "Invalid message type!";
+            throw new Error("Invalid message type!");
         }
       }
 
@@ -202,7 +207,7 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
       break;
 
     default:
-      throw "Unsupported protocol version!";
+      throw new Error("Unsupported protocol version!");
   };
 
   return decoded;
@@ -443,7 +448,7 @@ function decode_sensor_data_config(bytes, cursor, protocol_version) {
       result.axis = "z";
       break;
     default:
-      throw "Invalid axis value in sensor data config!";
+      throw new Error("Invalid axis value in sensor data config!");
   }
 
   // bits[12]
@@ -462,7 +467,7 @@ function decode_sensor_data_config(bytes, cursor, protocol_version) {
       // bits[13..18]
       result.scale = ((config >> 13) & 0x3F) * 4;
       if (result.scale == 0) {
-        throw "Invalid config.scale value!"
+        throw new Error("Invalid config.scale value!");
       }
       break;
 
@@ -471,7 +476,7 @@ function decode_sensor_data_config(bytes, cursor, protocol_version) {
       // bits[13..16]
       var scale_coefficient = ((config >> 13) & 0x0F);
       if (scale_coefficient < 1 || scale_coefficient > 15) {
-        throw "Invalid config.scale coefficient value!"
+        throw new Error("Invalid config.scale coefficient value!");
       }
       // bits[17..18]
       var scale_power = ((config >> 17) & 0x03) - 2;
@@ -479,19 +484,19 @@ function decode_sensor_data_config(bytes, cursor, protocol_version) {
       break;
 
     default:
-      throw "Unsupported protocol version!";
+      throw new Error("Unsupported protocol version!");
   }
 
   // bits[19..31]
   result.start_frequency = config >>> 19;
   if (result.start_frequency < 0 || result.start_frequency > 8191) {
-    throw "Invalid start_frequency value in sensor data config!";
+    throw new Error("Invalid start_frequency value in sensor data config!");
   }
 
   // bytes[5]
   result.spectral_line_frequency = decode_uint8(bytes, cursor);
   if (result.spectral_line_frequency == 0) {
-    throw "Invalid spectral_line_frequency value in sensor data config!";
+    throw new Error("Invalid spectral_line_frequency value in sensor data config!");
   }
 
 
@@ -810,7 +815,7 @@ function decode_boot_msg(bytes, cursor) {
 
   var expected_length = 46;
   if (bytes.length != expected_length) {
-    throw "Invalid boot message length " + bytes.length + " instead of " + expected_length
+    throw new Error("Invalid boot message length " + bytes.length + " instead of " + expected_length);
   }
 
   boot.base = {};
@@ -887,7 +892,7 @@ function decode_boot_msg_v3(bytes, cursor) {
   var expected_length_normal = 3;
   var expected_length_debug = 35;
   if (bytes.length != expected_length_normal && bytes.length != expected_length_debug) {
-    throw "Invalid boot message length " + bytes.length + " instead of " + expected_length_normal + " or " + expected_length_debug;
+    throw new Error("Invalid boot message length " + bytes.length + " instead of " + expected_length_normal + " or " + expected_length_debug);
   }
 
   var boot = {};
@@ -922,7 +927,7 @@ function decode_activated_msg(bytes, cursor) {
 
   var expected_length = 7;
   if (bytes.length != expected_length) {
-    throw "Invalid activated message length " + bytes.length + " instead of " + expected_length
+    throw new Error("Invalid activated message length " + bytes.length + " instead of " + expected_length);
   }
 
   activated.sensor = {};
@@ -942,7 +947,7 @@ function decode_activated_msg_v3(bytes, cursor) {
 
   var expected_length = 8;
   if (bytes.length != expected_length) {
-    throw "Invalid activated message length " + bytes.length + " instead of " + expected_length
+    throw new Error("Invalid activated message length " + bytes.length + " instead of " + expected_length);
   }
 
   activated.sensor = {};
@@ -968,7 +973,7 @@ function decode_deactivated_msg(bytes, cursor) {
 
   var expected_length = 3;
   if (bytes.length != expected_length) {
-    throw "Invalid deactivated message length " + bytes.length + " instead of " + expected_length
+    throw new Error("Invalid deactivated message length " + bytes.length + " instead of " + expected_length);
   }
 
   // byte[1]
@@ -979,7 +984,7 @@ function decode_deactivated_msg(bytes, cursor) {
   var reason_length = decode_uint8(bytes, cursor);
 
   if (reason_length != 0) {
-    throw "Unsupported deactivated reason length"
+    throw new Error("Unsupported deactivated reason length");
   }
 
   return deactivated;
@@ -990,7 +995,7 @@ function decode_sensor_event_msg(bytes, cursor) {
 
   var expected_length = 45;
   if (bytes.length != expected_length) {
-    throw "Invalid sensor_event message length " + bytes.length + " instead of " + expected_length
+    throw new Error("Invalid sensor_event message length " + bytes.length + " instead of " + expected_length);
   }
 
   // byte[1]
@@ -1065,7 +1070,7 @@ function decode_sensor_event_msg_v3(bytes, curser) {
     return decode_sensor_event_msg_extended(bytes, curser);
   }
   else {
-    throw "Invalid sensor_event message length " + bytes.length + " instead of " + expected_length_normal + " or " + expected_length_extended;
+    throw new Error("Invalid sensor_event message length " + bytes.length + " instead of " + expected_length_normal + " or " + expected_length_extended);
   }
 }
 
@@ -1077,7 +1082,7 @@ function decode_sensor_event_msg_normal(bytes, cursor) {
 
   sensor_event.selection = lookup_selection(selection);
   if (sensor_event.selection == "extended") {
-    throw "Mismatch between extended bit flag and message length!";
+    throw new Error("Mismatch between extended bit flag and message length!");
   }
 
   // byte[2]
@@ -1087,24 +1092,36 @@ function decode_sensor_event_msg_normal(bytes, cursor) {
   sensor_event.condition_2 = ((conditions >> 2) & 1);
   sensor_event.condition_3 = ((conditions >> 3) & 1);
   sensor_event.condition_4 = ((conditions >> 4) & 1);
-  sensor_event.condition_5 = ((conditions >> 5) & 1);
 
   sensor_event.trigger = lookup_trigger((conditions >> 6) & 3);
 
   sensor_event.rms_velocity = {};
 
   // byte[3,4]
-  sensor_event.rms_velocity.x = decode_uint16(bytes, cursor) / 100;
+  x = decode_uint16(bytes, cursor) / 100;
 
   // byte[5,6]
-  sensor_event.rms_velocity.y = decode_uint16(bytes, cursor) / 100;
+  y = decode_uint16(bytes, cursor) / 100;
 
   // byte[7,8]
-  sensor_event.rms_velocity.z = decode_uint16(bytes, cursor) / 100;
+  z = decode_uint16(bytes, cursor) / 100;
 
   // byte[9,10]
-  sensor_event.temperature = {};
-  sensor_event.temperature = decode_int16(bytes, cursor) / 100;
+  temperature = decode_int16(bytes, cursor) / 100;
+  
+  if (sensor_event.selection == "min_only") {
+    sensor_event.rms_velocity = {x:  { min: x}, y:  { min: y}, z:  { min: z}};
+    sensor_event.temperature = {min: temperature};
+  } else if (sensor_event.selection == "max_only") {
+    sensor_event.rms_velocity = {x:  { max: x}, y:  { max: y}, z:  { max: z}};
+    sensor_event.temperature = {max: temperature};
+  } else if (sensor_event.selection == "avg_only") {
+    sensor_event.rms_velocity = {x:  { avg: x}, y:  { avg: y}, z:  { avg: z}};
+    sensor_event.temperature = {avg: temperature};
+  } else {
+    throw new Error("Only min, max, or, avg is accepted!");
+  }
+
 
   return sensor_event;
 }
@@ -1117,7 +1134,7 @@ function decode_sensor_event_msg_extended(bytes, cursor) {
 
   sensor_event.selection = lookup_selection(selection);
   if (sensor_event.selection != "extended") {
-    throw "Mismatch between extended bit flag and message length!";
+    throw new Error("Mismatch between extended bit flag and message length!");
   }
 
   // byte[2]
@@ -1127,7 +1144,6 @@ function decode_sensor_event_msg_extended(bytes, cursor) {
   sensor_event.condition_2 = ((conditions >> 2) & 1);
   sensor_event.condition_3 = ((conditions >> 3) & 1);
   sensor_event.condition_4 = ((conditions >> 4) & 1);
-  sensor_event.condition_5 = ((conditions >> 5) & 1);
 
   sensor_event.trigger = lookup_trigger((conditions >> 6) & 3);
 
@@ -1198,7 +1214,7 @@ function decode_device_status_msg(bytes, cursor) {
 
   var expected_length = 24;
   if (bytes.length != expected_length) {
-    throw "Invalid device_status message length " + bytes.length + " instead of " + expected_length
+    throw new Error("Invalid device_status message length " + bytes.length + " instead of " + expected_length);
   }
 
   device_status.base = {};
@@ -1258,7 +1274,7 @@ function decode_device_status_msg_v3(bytes, cursor) {
   var expected_length_normal = 9;
   var expected_length_debug = 12;
   if (bytes.length != expected_length_normal && bytes.length != expected_length_debug) {
-    throw "Invalid device status message length " + bytes.length + " instead of " + expected_length_normal + " or " + expected_length_debug;
+    throw new Error("Invalid device status message length " + bytes.length + " instead of " + expected_length_normal + " or " + expected_length_debug);
   }
 
   var device_status = {};
@@ -1304,7 +1320,7 @@ function decode_device_status_msg_v3(bytes, cursor) {
 function decode_config_update_ans_msg(bytes, cursor) {
   var expected_length = 6;
   if (bytes.length != expected_length) {
-    throw "Invalid config update ans message length " + bytes.length + " instead of " + expected_length;
+    throw new Error("Invalid config update ans message length " + bytes.length + " instead of " + expected_length);
   }
 
   var ans = {};
@@ -1343,7 +1359,7 @@ function decode_sensor_data_msg(bytes, cursor, protocol_version) {
 
   var expected_length = 46;
   if (bytes.length != expected_length) {
-    throw "Invalid sensor_data message length " + bytes.length + " instead of " + expected_length
+    throw new Error("Invalid sensor_data message length " + bytes.length + " instead of " + expected_length);
   }
 
   // byte[1..5]
