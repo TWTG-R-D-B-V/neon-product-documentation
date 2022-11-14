@@ -1,6 +1,6 @@
 /**
- * Filename          : decoder_tt_doc-D_rev-3.js
- * Latest commit     : 910968dc
+ * Filename          : decoder_tt_doc-D_rev-4.js
+ * Latest commit     : 57c762f2
  * Protocol document : D
  *
  * Release History
@@ -44,6 +44,9 @@
  * -- Ignore null payload OR MAC uplink
  * -- Added entry point for ThingPark
  * - Used throw new Error instead of throw
+ *
+ * 2022-11-15 revision 4
+ * - Fixed: false error on decoding extended event message
  * 
  * YYYY-MM-DD revision X
  */
@@ -405,7 +408,7 @@ function decode_sensor_temperature_v4(bytes, cursor) {
       temperature.status = "PT100 Lower Bound Error";
     }
     else {
-      throw new Error("Invalid min, max, avg 1");
+      throw new Error("Invalid min, max, avg. PT100 lower bound error is included!");
     }
   } else if (
     min == PT100_UPPER_BOUND_ERROR_CODE ||
@@ -416,7 +419,7 @@ function decode_sensor_temperature_v4(bytes, cursor) {
       temperature.status = "PT100 Upper Bound Error";
     }
     else {
-      throw new Error("Invalid min, max, avg 2");
+      throw new Error("Invalid min, max, avg. PT100 Upper bound error is included!");
     }
   } else if (
     min == HARDWARE_ERROR_CODE ||
@@ -428,7 +431,7 @@ function decode_sensor_temperature_v4(bytes, cursor) {
     }
     else {
       console.log(min, max, avg);
-      throw new Error("Invalid min, max, avg 3 ");
+      throw new Error("Invalid min, max, avg. Hardware Error is included!");
     }
   } else {
     temperature.min = min;
@@ -821,7 +824,7 @@ function decode_sensor_event_msg_extended(bytes, cursor) {
   selection = decode_uint8(bytes, cursor);
 
   sensor_event.selection = lookup_selection(selection);
-  if (sensor_event.selection == "extended") {
+  if (sensor_event.selection != "extended") {
     throw new Error("Mismatch between extended bit flag and message length!");
   }
 
@@ -835,7 +838,7 @@ function decode_sensor_event_msg_extended(bytes, cursor) {
   sensor_event.trigger = lookup_trigger((conditions >> 6) & 3);
 
   sensor_event.temperature = {};
-  sensor_event.temperature =  decode_sensor_temperature_v4(bytes, cursor, version);
+  sensor_event.temperature =  decode_sensor_temperature_v4(bytes, cursor);
 
   return sensor_event;
 }
@@ -870,7 +873,7 @@ function decode_sensor_event_msg(bytes, cursor, version) {
 function decode_device_status_msg_v4(bytes, cursor) {
   var expected_length = 9;
   if (bytes.length != expected_length) {
-    throw new Error("Invalid device status message length " + bytes.length + " instead of " + expected_length_normal + " or " + expected_length_debug);
+    throw new Error("Invalid device status message length " + bytes.length + " instead of " + expected_length);
   }
 
   var device_status = {};
