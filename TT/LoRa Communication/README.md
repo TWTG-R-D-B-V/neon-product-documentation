@@ -19,14 +19,14 @@ The device is configurable over LoRaWAN. To help generate a configuration, our [
 
 ### Conversion
 
-The sensor communicates over LoRaWAN using a binary protocol. Usally the binary protocol is converted at the LoRa network server to a easier to handle format: JSON.
+The sensor communicates over LoRaWAN using a binary protocol. Usually the binary protocol is converted at the LoRa network server to a easier to handle format: JSON.
 
-- encoding: from JSON to a binary string for to the sensor
+- encoding: from JSON to a binary string for the sensor
 - decoding: from a binary string from the sensor to JSON
 
 #### Encoder / decoder
 
-This folder contains Javascript files can help with the conversion, for example in the LoRa network server. The scripts are known to be compatible with the following network servers:
+This folder contains Javascript files which can help with the conversion, for example in the LoRa network server. The scripts are known to be compatible with the following network servers:
 
 - [ChirpStack](https://www.chirpstack.io/)
 - [The Things Network](https://www.thethingsnetwork.org/)

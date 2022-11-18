@@ -21,7 +21,7 @@ The device is configurable over LoRaWAN. To help generate a configuration, our [
 
 The Vibration Sensor communicates over LoRaWAN using a binary protocol. Usually the binary protocol is converted at the LoRa network server to an easier to handle format: JSON.
 
-- encoding: from JSON to a binary string for to the Vibration Sensor
+- encoding: from JSON to a binary string for the Vibration Sensor
 - decoding: from a binary string from the Vibration Sensor to JSON
 
 #### Known issues
@@ -33,7 +33,7 @@ Contact support.neon@twtg.io for futher information.
 
 #### Encoder / decoder
 
-This folder contains Javascript files can help with the conversion in for example the LoRa network server. The scripts are known to be compatible with the following network servers:
+This folder contains Javascript files which can help with the conversion in for example the LoRa network server. The scripts are known to be compatible with the following network servers:
 
 - [ChirpStack](https://www.chirpstack.io/)
 - [The Things Network](https://www.thethingsnetwork.org/)
