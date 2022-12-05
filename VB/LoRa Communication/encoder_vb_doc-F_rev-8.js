@@ -1,6 +1,6 @@
 /**
- * Filename          : encoder_vb_doc-F_rev-6.js
- * Latest commit     : 02cd34799
+ * Filename          : encoder_vb_doc-F_rev-8.js
+ * Latest commit     : 5a3490992
  * Protocol document : F
  *
  * Release History
@@ -36,9 +36,16 @@
  * -- Updated lorawan_fsb_mask representation to disable_switch to dedicate 1 bit to every band (8 channels)
  * -- Uses ThingPark as default entry point where fPort is not an input but an output.
  *
- * YYYY-MM-DD revision X
- * -
+ * 2022-11-22 revision 7
+ * - Remove velocity and acceleration scale from sensor data config as VB now has auto scaling
  *
+ * 2022-12-01 revision 8
+ * - Removed scaling from sensor data config, as it is obsolete due to  auto scaling
+ * - Changed "frequency_range.peak_acceleration" to "frequency_range.acceleration" in sensor configuration message
+ * - Changed "frequency_range.rms_velocity" to "frequency_range.velocity" in sensor configuration message
+ * 
+ * YYYY-MM-DD revision X
+ * 
  */
 
 if (typeof module !== 'undefined') {
@@ -363,8 +370,8 @@ function encode_vb_sensor_config_v3(bytes, payload) {
   }
 
   encode_frequency_range(bytes,
-    payload.frequency_range.rms_velocity,
-    payload.frequency_range.peak_acceleration);
+    payload.frequency_range.velocity,
+    payload.frequency_range.acceleration);
 }
 
 function encode_vb_sensor_config(bytes, obj) {
@@ -530,12 +537,6 @@ function encode_vb_sensor_data_config_v3(bytes, payload) {
   encode_uint8(bytes, payload.frequency.resolution.velocity);
   // byte[38]
   encode_uint8(bytes, payload.frequency.resolution.acceleration);
-
-  // byte[39]
-  encode_sci_6(bytes, payload.scale.velocity);
-
-  // byte[40]
-  encode_sci_6(bytes, payload.scale.acceleration);
 }
 
 function encode_region_config_v3(bytes, payload) {
@@ -566,7 +567,7 @@ function encode_region_config_v3(bytes, payload) {
   disable_switch |= payload.disable_switch.dwell_time ? 0x1000 : 0x0000;
   encode_uint16(bytes, disable_switch);
 
-  encode_uint8(bytes, payload.rx1_delay &  0x0f);
+  encode_uint8(bytes, payload.rx1_delay & 0x0f);
 
   // ADR
   adr = payload.adr.mode;
