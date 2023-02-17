@@ -1,7 +1,9 @@
 /**
- * Filename          : encoder_tt_doc-D_rev-3.js
- * Latest commit     : 910968dc
- * Protocol document : D
+ * Filename             : encoder_tt_rev-3.js
+ * Latest commit        : 910968dc
+ * Protocol v2 document : 6020_P20-002_Communication-Protocol-NEON-Temperature-Transmitter_C.pdf 
+ * Protocol v3 document : 6020_AB_Communication-Protocol-NEON-Temperature-Transmitter_D.pdf
+ * Protocol v4 document : NEON-Temperature-Transmitter_Communication-Protocol-v4_DS-TT-xx-xx_4003_4_A2.pdf
  *
  * Release History
  *

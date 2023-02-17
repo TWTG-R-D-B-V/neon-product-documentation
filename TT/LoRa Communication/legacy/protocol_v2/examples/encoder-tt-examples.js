@@ -1,8 +1,8 @@
-var encoder = require('../../encoder_tt_doc-D_rev-2.js');
+var encoder = require('../../../encoder_tt_rev-3.js');
 
 // protocol v2
 var tt_AppPattern = {
-  "header": { "message_type": "application_configuration", "protocol_version": 2 },
+  "header": { "message_type": "sensor_configuration", "protocol_version": 2 },
   "device_type": "tt",
   "enable_rtd": false,
   "temperature_measurement_interval_seconds": 1,
@@ -33,7 +33,7 @@ var tt_AppPattern = {
 };
 
 var ttDeviceEU868 = {
-  "header": { "message_type": "device_configuration", "protocol_version": 2 },
+  "header": { "message_type": "base_configuration", "protocol_version": 2 },
   "switch_mask": {
     "enable_confirmed_event_message": true,
     "enable_rtd": false,
@@ -49,7 +49,7 @@ var ttDeviceEU868 = {
 };
 
 var ttDeviceUS915 = {
-  "header": { "message_type": "device_configuration", "protocol_version": 2 },
+  "header": { "message_type": "base_configuration", "protocol_version": 2 },
   "switch_mask": {
     "enable_confirmed_event_message": true,
     "enable_rtd": false,
@@ -65,7 +65,7 @@ var ttDeviceUS915 = {
 };
 
 var tt_ApplicationOfficial = {
-  "header": { "message_type": "application_configuration", "protocol_version": 2 },
+  "header": { "message_type": "sensor_configuration", "protocol_version": 2 },
   "device_type": "tt",
   "temperature_measurement_interval_seconds": 900,
   "periodic_event_message_interval": 16,
@@ -116,7 +116,7 @@ console.log("```")
 console.log("nodejs ./examples/encoder-tt-examples.js")
 console.log("```")
 console.log("")
-encode("Device config message (EU868)", ttDeviceEU868);
+encode("Base config message (EU868)", ttDeviceEU868);
 encode("Device config message (US915)", ttDeviceUS915);
 encode("Application config message", tt_ApplicationOfficial);
 encode("Application config message (pattern)", tt_AppPattern);

@@ -1,7 +1,9 @@
 /**
- * Filename          : decoder_tt_doc-D_rev-4.js
- * Latest commit     : 57c762f2
- * Protocol document : D
+ * Filename             : decoder_tt_rev-5.js
+ * Latest commit        : 6523e5b2
+ * Protocol v2 document : 6020_P20-002_Communication-Protocol-NEON-Temperature-Transmitter_C.pdf 
+ * Protocol v3 document : 6020_AB_Communication-Protocol-NEON-Temperature-Transmitter_D.pdf
+ * Protocol v4 document : NEON-Temperature-Transmitter_Communication-Protocol-v4_DS-TT-xx-xx_4003_4_A2.pdf
  *
  * Release History
  *
@@ -48,10 +50,15 @@
  * 2022-11-15 revision 4
  * - Fixed: false error on decoding extended event message
  * 
+ * 2023-02-17 revision 5
+ * - Added decoder for TS006 DevVersion
+ * - Removed minor reboot reason config
+ *
  * YYYY-MM-DD revision X
+ * - 
  */
 
- if (typeof module !== 'undefined') {
+if (typeof module !== 'undefined') {
   // Only needed for nodejs
   module.exports = {
     decodeUplink: decodeUplink,
@@ -95,7 +102,7 @@
 /**
  * Decoder for ThingPark network server
  */
- function decodeUplink(input) {
+function decodeUplink(input) {
   return Decode(input.fPort, input.bytes)
 }
 
@@ -131,14 +138,19 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
   var STR_DEVICE_STATUS = "device_status";
 
   var decoded = {};
-  var cursor = {};   // keeping track of which byte to process.
-  cursor.value = 0;  // Start from 0
 
   if (fPort == 0 || bytes.length == 0) {
     // Ignore null payload OR MAC uplink
     return decoded;
   }
 
+  // Handle generic LoRaWAN specified messages
+  if (handle_generic_messages(fPort, bytes, decoded)) {
+    return decoded;
+  }
+
+  var cursor = {};   // keeping track of which byte to process.
+  cursor.value = 0;  // Start from 0
   var protocol_version = get_protocol_version(bytes);
 
   switch (protocol_version) {
@@ -383,6 +395,10 @@ function decode_temperature_16bit(bytes, cursor) {
   } else {
     // Convert value to temperature value
     temperature = temperature / 10;
+    if (temperature < -300)
+    {
+      return PT100_LOWER_BOUND_ERROR_CODE;
+    }
     return temperature;
   }
 }
@@ -1024,14 +1040,7 @@ function reboot_lookup_minor(reboot_reason) {
     case 0:
       return ""; // No minor reboot reason
     case 1:
-      switch (minor_reboot_reason) {
-        case 0:
-          return "success";
-        case 1:
-          return "rejected";
-        default:
-          return "unknown";
-      }
+      return ""; // No minor reboot reason
     case 2:
       switch (minor_reboot_reason) {
         case 0:
@@ -1265,5 +1274,27 @@ function lookup_trigger(trigger) {
       return "button press";
     default:
       return "unknown";
+  }
+}
+
+
+function handle_generic_messages(fPort, bytes, decoded) {
+  var FPORT_FIRMWARE_MANAGEMENT_PROTOCOL_SPECIFICATION = 203; // Firmware Management Protocol Specification TS006-1.0.0
+  var cursor = {};   // keeping track of which byte to process.
+  cursor.value = 0;  // Start from 0
+
+  switch (fPort) {
+    case FPORT_FIRMWARE_MANAGEMENT_PROTOCOL_SPECIFICATION: {
+      var CID_DEV_VERSION = 0x01;
+      var cid = decode_uint8(bytes, cursor);
+      switch (cid) {
+        case CID_DEV_VERSION:
+          decoded.DevVersion = { FW_version: "0x" + uint32_to_hex(decode_uint32(bytes, cursor)), HW_version: "0x" + uint32_to_hex(decode_uint32(bytes, cursor)) }
+          break;
+      }
+      return true;
+    }
+    default:
+      return false;
   }
 }
