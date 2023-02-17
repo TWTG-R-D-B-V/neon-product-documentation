@@ -1,7 +1,8 @@
 /**
- * Filename          : decoder_vb_doc-F_rev-8.js
- * Latest commit     : b30254406
- * Protocol document : F
+ * Filename             : decoder_vb_rev-8.js
+ * Latest commit        : fc4c54844
+ * Protocol v2 document : 6013_P20-002_Communication-Protocol-NEON-Vibration-Sensor_E.pdf
+ * Protocol v3 document : NEON-Vibration-Sensor_Communication-Protocol-v3_DS-VB-xx-xx_6013_3_A2.pdf
  *
  * Release History
  *
@@ -45,7 +46,7 @@
  * 2022-12-01 revision 8
  * - Added resolution to sensor data
  * - Added decoder for TS006 DevVersion
- * - Changed "acceleration.avg" to "acceleration.RMS" in sensor event
+ * - Changed "acceleration.avg" to "acceleration.rms" in sensor event
  * - Changed "acceleration.max" to "acceleration.peak" in sensor event
  * - Removed minor reboot reason config
  * 

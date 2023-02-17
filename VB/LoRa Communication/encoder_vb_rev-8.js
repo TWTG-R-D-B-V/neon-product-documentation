@@ -1,7 +1,8 @@
 /**
- * Filename          : encoder_vb_doc-F_rev-8.js
- * Latest commit     : 5a3490992
- * Protocol document : F
+ * Filename             : encoder_vb_rev-8.js
+ * Latest commit        : 5a3490992
+ * Protocol v2 document : 6013_P20-002_Communication-Protocol-NEON-Vibration-Sensor_E.pdf
+ * Protocol v3 document : NEON-Vibration-Sensor_Communication-Protocol-v3_DS-VB-xx-xx_6013_3_A2.pdf
  *
  * Release History
  *

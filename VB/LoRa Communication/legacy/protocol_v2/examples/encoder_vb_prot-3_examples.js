@@ -1,4 +1,4 @@
-var encoder = require('../encoder_vb_doc-F_rev-6.js');
+var encoder = require('../../../encoder_vb_doc-F_rev-8');
 
 var baseConfigDefault = {
   "config_update_req": {
