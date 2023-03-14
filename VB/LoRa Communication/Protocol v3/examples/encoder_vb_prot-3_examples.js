@@ -1,4 +1,4 @@
-var encoder = require('../../../encoder_vb_doc-F_rev-8');
+var encoder = require('../../encoder_vb_rev-8.js');
 
 var baseConfigDefault = {
   "config_update_req": {
@@ -49,8 +49,8 @@ var sensorConfigDefault = {
       'measurement_interval_minutes': 15,
       "periodic_event_message_interval": 16,
       "frequency_range": {
-        "rms_velocity": "range_2",
-        "peak_acceleration": "range_2"
+        "velocity": "range_2",
+        "acceleration": "range_2"
       }
     }
   }
@@ -70,8 +70,8 @@ var sensorConfigAlternative = {
       'measurement_interval_minutes': 15,
       "periodic_event_message_interval": 16,
       "frequency_range": {
-        "rms_velocity": "range_1",
-        "peak_acceleration": "range_2"
+        "velocity": "range_1",
+        "acceleration": "range_2"
       }
     }
   }
