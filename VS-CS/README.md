@@ -8,7 +8,8 @@ NEON Sensors are very user-friendly to be installed and maintained.
 
 ## Configuration
 
-The NEON Contact Sensor can be configured via LoRaWAN. The configuration includes settings for communication, measurement and event triggers.
+The NEON Contact Sensor can be configured via LoRaWAN.
+The configuration includes settings for communication, measurement and event triggers.
 Information on how these configurations can be encoded and sent to the device can be found in the [LoRa Communication](LoRa%20Communication) folder.
 
 ![NEON Contact Sensor](../.resources/vs-cs.jpg)
