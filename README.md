@@ -10,3 +10,4 @@ The documentation is grouped per product type:
 - [Temperature Transmitter (TT)](TT) 
 - [Vibration Sensor (VB)](VB) 
 - [NFC tag (NFC)](NFC) 
+- [Contact Sensor (VS-CS)](VS-CS) 
