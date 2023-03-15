@@ -5,6 +5,8 @@ This folder contains the latest product documentation, please note that document
 
 https://www.twtg.io/products/neon-temperature-sensor/
 
+In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+
 ## Configuration
 
 The NEON Temperature Sensor can be configured via LoRaWAN.

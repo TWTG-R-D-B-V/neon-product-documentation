@@ -2,6 +2,8 @@
 
 In this folder all documentation and scripts related to LoRa communication of the NEON quarter-turn Valve Sensor can be found.
 
+In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+
 ## Overview table
 
 This table gives an overview of the variants and versions.

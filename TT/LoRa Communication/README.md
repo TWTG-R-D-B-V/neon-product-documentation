@@ -2,6 +2,8 @@
 
 In this folder all documentation and scripts related to LoRa communication of the Vibration Sensor can be found.
 
+In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+
 ## Overview table
 
 This table gives an overview of the variants and versions.
@@ -72,5 +74,3 @@ nodejs ./Protocol\ v4/examples/decoder_tt_prot-4_examples.js
 | Known issues | Effect | Effected serial numbers |
 | ------------ | ------ | ----------------------- |
 | NA           | NA     | NA                      |
-
-Contact support.neon@twtg.io for further information.
