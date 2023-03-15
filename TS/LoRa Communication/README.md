@@ -17,7 +17,7 @@ This table gives an overview of the variants and versions.
 | LoRaWAN class                                   | A                                                     |
 | ISM bands                                       | EU868, AS923, US915                                   |
 | Rapid Network Acquisition (US915/ AU915)        | No                                                    |
-| Default subband (US915/ AU915)                  | Subband 1, others on request                          |
+| Default subband (US915/ AU915)                  | Subband 1 (first 8 channels), others on request       |
 
 ### Online configurator
 
