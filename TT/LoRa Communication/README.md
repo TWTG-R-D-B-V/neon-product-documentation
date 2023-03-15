@@ -18,6 +18,8 @@ The production batch can be found in the serial number (TT 01 20 **AA** 00001).
 | LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                             | 1.0.2revB                                             | RP2-1.0.1                                             |
 | LoRaWAN class                                   | A                                                     | A                                                     | A                                                     |
 | ISM bands                                       | EU868, AS923                                          | EU868, AS923                                          | US915                                                 |
+| Rapid Network Acquisition (US915/ AU915)        | NA                                                    | NA                                                    | Yes                                                   |
+| Default subband (US915/ AU915)                  | NA                                                    | NA                                                    | NA / Rapid Network Acquisition                        |
 
 ## Protocol version
 

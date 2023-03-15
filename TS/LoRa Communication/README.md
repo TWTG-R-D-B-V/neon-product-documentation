@@ -16,6 +16,8 @@ This table gives an overview of the variants and versions.
 | LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                             |
 | LoRaWAN class                                   | A                                                     |
 | ISM bands                                       | EU868, AS923, US915                                   |
+| Rapid Network Acquisition (US915/ AU915)        | No                                                    |
+| Default subband (US915/ AU915)                  | Subband 1, others on request                          |
 
 ### Online configurator
 
