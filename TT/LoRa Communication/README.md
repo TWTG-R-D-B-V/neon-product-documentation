@@ -74,5 +74,3 @@ nodejs ./Protocol\ v4/examples/decoder_tt_prot-4_examples.js
 | Known issues | Effect | Effected serial numbers |
 | ------------ | ------ | ----------------------- |
 | NA           | NA     | NA                      |
-
-Contact support.neon@twtg.io for further information.
