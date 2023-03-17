@@ -14,9 +14,11 @@ The device identifier (DS-xx-xx-xx) can be found on the device label.
 | Protocol version                                | [2](./Protocol%20v2/)                                  | [3](./Protocol%20v3/)                                  |
 | NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/vb/v2/)  | [link](https://neon-configurator.twtg.io/neon/vb/v3/)  |
 | LoRaWAN MAC (Layer-2) specification             | 1.0.2                                                  | 1.0.4                                                  |
-| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                              | RP2-1.0.4                                              |
+| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                              | RP2-1.0.1                                              |
 | LoRaWAN class                                   | A                                                      | A                                                      |
 | ISM bands                                       | EU868, AS923                                           | US915                                                  |
+| Rapid Network Acquisition (US915/ AU915)        | NA                                                     | Yes                                                    |
+| Default subband (US915/ AU915)                  | NA                                                     | NA / Rapid Network Acquisition                         |
 
 ## Protocol version
 

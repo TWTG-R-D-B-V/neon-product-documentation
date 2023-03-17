@@ -15,9 +15,11 @@ The production batch can be found in the serial number (TT 01 20 **AA** 00001).
 | Protocol version                                | [2](./Protocol%20v2/)                                 | [3](./Protocol%20v3/)                                 | [4](./Protocol%20v4/)                                 |
 | NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/tt/v2/) | [link](https://neon-configurator.twtg.io/neon/tt/v3/) | [link](https://neon-configurator.twtg.io/neon/tt/v4/) |
 | LoRaWAN MAC (Layer-2) specification             | 1.0.2                                                 | 1.0.2                                                 | 1.0.4                                                 |
-| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                             | 1.0.2revB                                             | RP2-1.0.4                                             |
+| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                             | 1.0.2revB                                             | RP2-1.0.1                                             |
 | LoRaWAN class                                   | A                                                     | A                                                     | A                                                     |
 | ISM bands                                       | EU868, AS923                                          | EU868, AS923                                          | US915                                                 |
+| Rapid Network Acquisition (US915/ AU915)        | NA                                                    | NA                                                    | Yes                                                   |
+| Default subband (US915/ AU915)                  | NA                                                    | NA                                                    | NA / Rapid Network Acquisition                        |
 
 ## Protocol version
 
