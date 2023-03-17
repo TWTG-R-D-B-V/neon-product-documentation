@@ -1,229 +1,78 @@
-## LoRa Communication
+# LoRa Communication
 
-In this folder all documentation and scripts related to LoRa communication of the specific product can be found. 
+In this folder all documentation and scripts related to LoRa communication of the Vibration Sensor can be found.
 
-### Protocol version
+In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
 
-The protocol version depends on the production batch of your product. The communication protocol documents and examples apply to products of a certain batch. The batch can be read from the serial number. The encoder / decoder are compatible with all protocol versions.
+## Overview table
 
-The current page is for the latest version. Other versions can be found via the following table.
+This table gives an overview of the variants and versions.
+The device identifier (DS-xx-xx-xx) can be found on the device label.
+The production batch can be found in the serial number (TT 01 20 **AA** 00001).
 
-| Batch  | Serial number example  | Protocol version  |
-|---|---|---:|
-| DS-01 AA  | TT 01 20 **AA** 00001 | [TT protocol v2](legacy/protocol_v2) |
-| DS-01 AB  | TT 01 21 **AB** 00001 | [TT protocol v3](legacy/protocol_v3) |
-| DS-02 AA  | TT 02 22 **AA** 00001 | TT protocol v4 |
+|                                                 | DS-TT-01-xx production batch AA                       | DS-TT-01-xx production batch AB and higher            | DS-TT-02-00 all firmware versions                     |
+| ----------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
+| Protocol version                                | [2](./Protocol%20v2/)                                 | [3](./Protocol%20v3/)                                 | [4](./Protocol%20v4/)                                 |
+| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/tt/v2/) | [link](https://neon-configurator.twtg.io/neon/tt/v3/) | [link](https://neon-configurator.twtg.io/neon/tt/v4/) |
+| LoRaWAN MAC (Layer-2) specification             | 1.0.2                                                 | 1.0.2                                                 | 1.0.4                                                 |
+| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                             | 1.0.2revB                                             | RP2-1.0.1                                             |
+| LoRaWAN class                                   | A                                                     | A                                                     | A                                                     |
+| ISM bands                                       | EU868, AS923                                          | EU868, AS923                                          | US915                                                 |
+| Rapid Network Acquisition (US915/ AU915)        | NA                                                    | NA                                                    | Yes                                                   |
+| Default subband (US915/ AU915)                  | NA                                                    | NA                                                    | NA / Rapid Network Acquisition                        |
 
-### Online configurator
+## Protocol version
 
-The device is configurable over LoRaWAN. To help generate a configuration, our [NEON Configurator](https://neon-configurator.twtg.io/neon/tt/v3/) can be used. This configurator is an online form with all possible settings within their allowed ranges. After tailoring the settings to your application you can then generate a LoRaWAN message to be sent via your network server.
+The communication protocol depends on the device version and firmware version.
 
-### Conversion
+## Online configurator
 
-The sensor communicates over LoRaWAN using a binary protocol. Usually the binary protocol is converted at the LoRa network server to a easier to handle format: JSON.
+The device is configurable over LoRaWAN.
+To help generate a configuration, our NEON Configurator can be used.
+This configurator is an online form with all possible settings within their allowed ranges.
+After tailoring the settings to your application you can then generate a LoRaWAN message to be sent via your network server.
 
-- encoding: from JSON to a binary string for the sensor
-- decoding: from a binary string from the sensor to JSON
+## Conversion
 
-#### Encoder / decoder
+The Vibration Sensor communicates over LoRaWAN using a binary protocol.
+Usually the binary protocol is converted at the LoRa network server to an easier to handle format: JSON.
 
-This folder contains Javascript files which can help with the conversion, for example in the LoRa network server. The scripts are known to be compatible with the following network servers:
+- encoding: from JSON to a binary string for the Vibration Sensor
+- decoding: from a binary string from the Vibration Sensor to JSON
 
-- [ChirpStack](https://www.chirpstack.io/)
-- [The Things Network](https://www.thethingsnetwork.org/)
+### Encoder / decoder
 
+This folder contains Javascript files which can help with the conversion in for example the LoRa network server.
+The scripts are compatible with all protocol versions.
 
-The encoder/decoder script names are postfixed with version information: 
+The encoder/decoder script names are postfixed with version information:
 
-	[encoder/decoder]_[type]_rev-[rev].js
+    [encoder/decoder]_[type]_rev-[rev].js
 
 - **type**: the sensor type abbreviation
 - **rev**: the revision number of improvements of the scripts
 
+### Conversion examples
 
-## Conversion examples
+Per protocol version examples are available for using the encoder and decoder.
+The use of the encoder and decoder are demonstrated using the following commands:
 
-The examples below are generated using the Javascript files in the example folder using [nodejs](https://nodejs.org/) (a Linux application to execute Javascript files).
+```
+nodejs ./Protocol\ v2/examples/encoder_tt_prot-2_examples.js
 
-### Decoding TT protocol v4
+nodejs ./Protocol\ v2/examples/decoder_tt_prot-2_examples.js
 
-Generated by:
-```
-nodejs ./examples/decoder-tt-examples.js
-```
+nodejs ./Protocol\ v3/examples/encoder_tt_prot-3_examples.js
 
-#### Boot message
-fPort: 1
-, bytestring (hexidecimal):
-```
-4001
-```
-JSON:
-```
-{
-    "boot": {
-        "reboot_reason": {
-            "major": "config update",
-            "minor": ""
-        },
-        "protocol_version": 4
-    }
-}
-```
-#### Activated message
-fPort: 5
-, bytestring (hexidecimal):
-```
-4004
-```
-JSON:
-```
-{
-    "activated": {
-        "device_type": "tt",
-        "protocol_version": 4
-    }
-}
-```
-#### Deactivated message
-fPort: 6
-, bytestring (hexidecimal):
-```
-400000
-```
-JSON:
-```
-{
-    "deactivated": {
-        "reason": "user_triggered",
-        "protocol_version": 4
-    }
-}
-```
-#### Application event message (pattern 1)
-fPort: 3
-, bytestring (hexidecimal):
-```
-40024a9cff
-```
-JSON:
-```
-{
-    "sensor_event": {
-        "selection": "max_only",
-        "condition_0": 0,
-        "condition_1": 1,
-        "condition_2": 0,
-        "condition_3": 1,
-        "trigger": "periodic",
-        "temperature": {
-            "max": -10,
-            "status": "OK"
-        },
-        "protocol_version": 4
-    }
-}
-```
-#### Application event message (pattern 2)
-fPort: 3
-, bytestring (hexidecimal):
-```
-40004a44489cffc800
-```
-JSON:
-```
-{
-    "sensor_event": {
-        "selection": "extended",
-        "condition_0": 0,
-        "condition_1": 1,
-        "condition_2": 0,
-        "condition_3": 1,
-        "trigger": "periodic",
-        "temperature": {
-            "min": 1850,
-            "max": -10,
-            "avg": 20,
-            "status": "OK"
-        },
-        "protocol_version": 4
-    }
-}
-```
-#### Device status message (pattern 1)
-fPort: 2
-, bytestring (hexidecimal):
-```
-407515030002060102
-```
-JSON:
-```
-{
-    "device_status": {
-        "battery_voltage": 2.9176470588235293,
-        "temperature": 21,
-        "lora_tx_counter": 3,
-        "avg_rssi": "-100..-129",
-        "bist": "0x06",
-        "event_counter": 1,
-        "sensor_type": "K",
-        "protocol_version": 4
-    }
-}
+nodejs ./Protocol\ v3/examples/decoder_tt_prot-3_examples.js
+
+nodejs ./Protocol\ v4/examples/encoder_tt_prot-4_examples.js
+
+nodejs ./Protocol\ v4/examples/decoder_tt_prot-4_examples.js
 ```
 
-### Encoding TT protocol v4
+## Known issues
 
-Generated by:
-```
-nodejs ./examples/encoder-tt-examples.js
-```
-
-#### Base config message
-JSON:
-```
-{
-    "config_update_req": {
-        "config_type": "base",
-        "protocol_version": 4,
-        "tag": "0x096c4970",
-        "payload": {
-            "switch_mask": {
-                "enable_confirmed_event_message": true,
-                "enable_confirmed_data_message": true,
-                "allow_deactivation": true
-            },
-            "periodic_message_random_delay_seconds": 31,
-            "status_message_interval": "5 days"
-        }
-    }
-}
-```
-Bytestring (hexidecimal):
-```
-4070496c0907ff
-```
-#### Sensor config message
-JSON:
-```
-{
-    "config_update_req": {
-        "config_type": "sensor",
-        "protocol_version": 4,
-        "tag": "0xE85892DC",
-        "payload": {
-            "device_type": "tt",
-            "sensor_type": "K",
-            "switch_mask": {
-                "selection": "avg_only"
-            },
-            "measurement_interval_minutes": 5,
-            "periodic_event_message_interval": 12
-        }
-    }
-}
-```
-Bytestring (hexidecimal):
-```
-43dc9258e8040203050c00
-```
+| Known issues | Effect | Effected serial numbers |
+| ------------ | ------ | ----------------------- |
+| NA           | NA     | NA                      |

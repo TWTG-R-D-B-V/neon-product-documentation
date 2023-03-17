@@ -1,44 +1,48 @@
-## LoRa Communication
+# LoRa Communication
 
 In this folder all documentation and scripts related to LoRa communication of the Vibration Sensor can be found.
 
-### Protocol version
+In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
 
-The protocol version depends on the production batch of your product. The communication protocol documents and examples apply to products of a certain batch. The batch can be read from the serial number. The encoder / decoder are compatible with all protocol versions.
+## Overview table
 
-The current page is for the latest version. Other versions can be found via the following table.
+This table gives an overview of the variants and versions.
+The device identifier (DS-xx-xx-xx) can be found on the device label.
 
-| Batch | LD serial number example | VB serial number example |                     Protocol version |
-| ----- | ------------------------ | ------------------------ | -----------------------------------: |
-| AA    | LD 01 20 **AA** 00001    | VB 01 20 **AA** 00001    | [VB protocol v2](legacy/protocol_v2) |
-| AB    | LD 01 21 **AA** 00001    | VB 01 21 **AB** 00001    | [VB protocol v2](legacy/protocol_v2) |
-| AA    | LD 02 22 **AA** 00001    | VB 02 22 **AA** 00001    |                       VB protocol v3 |
+|                                                 | DS-LD-01-xx with DS-VB-01-xx for all firmware versions | DS-LD-02-00 with DS-VB-02-00 for all firmware versions |
+| ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
+| Protocol version                                | [2](./Protocol%20v2/)                                  | [3](./Protocol%20v3/)                                  |
+| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/vb/v2/)  | [link](https://neon-configurator.twtg.io/neon/vb/v3/)  |
+| LoRaWAN MAC (Layer-2) specification             | 1.0.2                                                  | 1.0.4                                                  |
+| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                              | RP2-1.0.1                                              |
+| LoRaWAN class                                   | A                                                      | A                                                      |
+| ISM bands                                       | EU868, AS923                                           | US915                                                  |
+| Rapid Network Acquisition (US915/ AU915)        | NA                                                     | Yes                                                    |
+| Default subband (US915/ AU915)                  | NA                                                     | NA / Rapid Network Acquisition                         |
 
-### Online configurator
+## Protocol version
 
-The device is configurable over LoRaWAN. To help generate a configuration, our [NEON Configurator](https://neon-configurator.twtg.io/neon/vb/v3/) can be used. This configurator is an online form with all possible settings within their allowed ranges. After tailoring the settings to your application you can then generate a LoRaWAN message to be sent via your network server.
+The communication protocol depends on the device version and firmware version.
 
-### Conversion
+## Online configurator
 
-The Vibration Sensor communicates over LoRaWAN using a binary protocol. Usually the binary protocol is converted at the LoRa network server to an easier to handle format: JSON.
+The device is configurable over LoRaWAN.
+To help generate a configuration, our NEON Configurator can be used.
+This configurator is an online form with all possible settings within their allowed ranges.
+After tailoring the settings to your application you can then generate a LoRaWAN message to be sent via your network server.
+
+## Conversion
+
+The Vibration Sensor communicates over LoRaWAN using a binary protocol.
+Usually the binary protocol is converted at the LoRa network server to an easier to handle format: JSON.
 
 - encoding: from JSON to a binary string for the Vibration Sensor
 - decoding: from a binary string from the Vibration Sensor to JSON
 
-#### Known issues
+### Encoder / decoder
 
-| Known issues                                     | Effect                                                                                                         | Effected serial numbers        |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| Incorrect sequence number in sensor data message | 1. The sequence number will constantly be two.<br /> 2. The sequence number will wrap to a not expected value. | VB0120AA00001 to VB0120AA00216 |
-
-Contact support.neon@twtg.io for futher information.
-
-#### Encoder / decoder
-
-This folder contains Javascript files which can help with the conversion in for example the LoRa network server. The scripts are known to be compatible with the following network servers:
-
-- [ChirpStack](https://www.chirpstack.io/)
-- [The Things Network](https://www.thethingsnetwork.org/)
+This folder contains Javascript files which can help with the conversion in for example the LoRa network server.
+The scripts are compatible with all protocol versions.
 
 The encoder/decoder script names are postfixed with version information:
 
@@ -47,8 +51,23 @@ The encoder/decoder script names are postfixed with version information:
 - **type**: the sensor type abbreviation
 - **rev**: the revision number of improvements of the scripts
 
-#### Conversion examples
+### Conversion examples
 
-The examples below are generated using the example Javascript files in the example folder using [nodejs](https://nodejs.org/) (a Linux application to execute Javascript files).
+Per protocol version examples are available for using the encoder and decoder.
+The use of the encoder and decoder are demonstrated using the following commands:
 
-_Conversion examples will be added soon_
+```
+nodejs ./Protocol\ v2/examples/encoder_vb_prot-2_examples.js
+
+nodejs ./Protocol\ v2/examples/decoder_vb_prot-2_examples.js
+
+nodejs ./Protocol\ v3/examples/encoder_vb_prot-3_examples.js
+
+nodejs ./Protocol\ v3/examples/decoder_vb_prot-3_examples.js
+```
+
+## Known issues
+
+| Known issues                                     | Effect                                                                                                         | Effected serial numbers        |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Incorrect sequence number in sensor data message | 1. The sequence number will constantly be two.<br /> 2. The sequence number will wrap to a not expected value. | VB0120AA00001 to VB0120AA00216 |

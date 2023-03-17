@@ -1,27 +1,26 @@
-## LoRa Communication
+# LoRa Communication
 
-In this folder all documentation and scripts related to LoRa communication of the specific product can be found. 
+In this folder all documentation and scripts related to LoRa communication of the NEON Contact Sensor can be found.
 
-### Conversion
+In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
 
-The sensor communicates over LoRaWAN using a binary protocol. Usually the binary protocol is converted at the LoRa network server to a easier to handle format: JSON.
+## Overview table
 
-- encoding: from JSON to a binary string for the sensor
-- decoding: from a binary string from the sensor to JSON
+This table gives an overview of the variants and versions.
 
-#### Encoder / decoder
+|                                                 | All VS-CS devices                                     |
+| ----------------------------------------------- | ----------------------------------------------------- |
+| Protocol version                                | 1                                                     |
+| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/cs/v1/) |
+| LoRaWAN MAC (Layer-2) specification             | 1.0.2                                                 |
+| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                             |
+| LoRaWAN class                                   | A                                                     |
+| ISM bands                                       | EU868, AS923, US915                                   |
+| Rapid Network Acquisition (US915/ AU915)        | No                                                    |
+| Default subband (US915/ AU915)                  | Subband 1 (first 8 channels), others on request       |
 
-This folder contains Javascript files which can help with the conversion, for example in the LoRa network server. The scripts are known to be compatible with the following network servers:
+### Online configurator
 
-- [ChirpStack](https://www.chirpstack.io/)
-- [The Things Network](https://www.thethingsnetwork.org/)
-
-
-The encoder/decoder script names are postfixed with version information: 
-
-	[encoder/decoder]_[type]_doc-[doc]_rev-[rev].js
-
-- **type**: the sensor type abbreviation
-- **doc**: the communication protocol document version
-- **rev**: the revision number of improvements of the scripts
-
+The device is configurable over LoRaWAN. To help generate a configuration, our NEON Configurator can be used.
+This configurator is an online form with all possible settings within their allowed ranges.
+After tailoring the settings to your application you can then generate a LoRaWAN message to be sent via your network server.
