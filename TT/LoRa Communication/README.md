@@ -1,6 +1,6 @@
 # LoRa Communication
 
-In this folder all documentation and scripts related to LoRa communication of the Vibration Sensor can be found.
+In this folder all documentation and scripts related to LoRa communication of the Temperature Transmitter can be found.
 
 In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
 

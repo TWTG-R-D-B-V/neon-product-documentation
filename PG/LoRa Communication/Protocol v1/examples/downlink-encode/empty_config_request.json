@@ -1,0 +1,48 @@
+[
+  {
+    "description": "RT v1 Empty config request",
+    "type": "downlink-encode",
+    "input": {
+      "data": {
+        "config_update_req": {
+          "config_type": "sensor",
+          "protocol_version": 1
+        }
+      }
+    },
+    "output": {
+      "fPort": 7,
+      "bytes": "13"
+    }
+  },
+  {
+    "description": "RT v1 Empty config request, wrong config type",
+    "type": "downlink-encode",
+    "input": {
+      "data": {
+        "config_update_req": {
+          "config_type": "wrong",
+          "protocol_version": 1
+        }
+      }
+    },
+    "output": {
+      "errors": ["Invalid config type!"]
+    }
+  },
+  {
+    "description": "RT v1 Empty config request, RT has no sensor data config",
+    "type": "downlink-encode",
+    "input": {
+      "data": {
+        "config_update_req": {
+          "config_type": "sensor_data",
+          "protocol_version": 1
+        }
+      }
+    },
+    "output": {
+      "errors": ["Invalid config type!"]
+    }
+  }
+]

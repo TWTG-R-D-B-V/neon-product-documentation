@@ -5,13 +5,15 @@ In this repository all product documentation form the TWTG NEON product line can
 
 The documentation is grouped per product type:
 
-- [Quarter Turn Valve Sensor (VS-QT)](VS-QT) 
-- [Multi Turn Valve Sensor (VS-MT)](VS-MT) 
+- [Pressure Sensor (PS)](PS) 
+- [Pressure Gauge (PG)](PG) 
+- [Vibration Sensor (VB)](VB) 
 - [Temperature Sensor (TS)](TS) 
 - [Temperature Transmitter (TT)](TT) 
-- [Vibration Sensor (VB)](VB) 
-- [NFC tag (NFC)](NFC) 
+- [Quarter Turn Valve Sensor (VS-QT)](VS-QT) 
+- [Multi Turn Valve Sensor (VS-MT)](VS-MT) 
 - [Contact Sensor (VS-CS)](VS-CS) 
+- [NFC tag (NFC)](NFC) 
 
 ## Service Desk for NEON products
 
