@@ -1,0 +1,42 @@
+[
+  {
+    "description": "RT v1 Sensor uncalibrated measurement message",
+    "type": "uplink",
+    "input": {
+      "bytes": "100000a03f",
+      "recvTime": "2023-02-15T13:58:57.743Z",
+      "fPort": 8
+    },
+    "output": {
+      "data": {
+        "uncalibrated_measurement": {
+          "protocol_version": 1,
+          "measurement": {
+            "uncalibrated_measurement": 1.25,
+            "status": "OK"
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "RT v1 Sensor uncalibrated measurement message, error",
+    "type": "uplink",
+    "input": {
+      "bytes": "10030080FF",
+      "recvTime": "2023-02-15T13:58:57.743Z",
+      "fPort": 8
+    },
+    "output": {
+      "data": {
+        "uncalibrated_measurement": {
+          "protocol_version": 1,
+          "measurement": {
+            "uncalibrated_measurement": null,
+            "status": "Lower Bound Error"
+          }
+        }
+      }
+    }
+  }
+]
