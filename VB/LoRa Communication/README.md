@@ -8,17 +8,18 @@ In case you have any technical question, or an issue to report please use the ht
 
 This table gives an overview of the variants and versions.
 The device identifier (DS-xx-xx-xx) can be found on the device label.
+The production batch can be found in the serial number (LD 01 20 **AA** 00001).
 
-|                                                 | DS-LD-01-xx with DS-VB-01-xx for all firmware versions | DS-LD-02-00 with DS-VB-02-00 for all firmware versions |
-| ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
-| Protocol version                                | [2](./Protocol%20v2/)                                  | [3](./Protocol%20v3/)                                  |
-| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/vb/v2/)  | [link](https://neon-configurator.twtg.io/neon/vb/v3/)  |
-| LoRaWAN MAC (Layer-2) specification             | 1.0.2                                                  | 1.0.4                                                  |
-| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                              | RP2-1.0.1                                              |
-| LoRaWAN class                                   | A                                                      | A                                                      |
-| ISM bands                                       | EU868, AS923                                           | US915                                                  |
-| Rapid Network Acquisition (US915/ AU915)        | NA                                                     | Yes                                                    |
-| Default subband (US915/ AU915)                  | NA                                                     | NA / Rapid Network Acquisition                         |
+|                                                 | DS-LD-01-xx with DS-VB-01-xx for all firmware versions | DS-LD-01-03 with DS-VB-01-03 production batch AD and higher | DS-LD-02-00 with DS-VB-02-00 for all firmware versions |
+| ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------      | ------------------------------------------------------ |
+| Protocol version                                | [2](./Protocol%20v2/)                                  | [3](./Protocol%20v3/)                                       | [3](./Protocol%20v3/)                                  |
+| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/vb/v2/)  | [link](https://neon-configurator.twtg.io/neon/vb/v3/)       | [link](https://neon-configurator.twtg.io/neon/vb/v3/)  |
+| LoRaWAN MAC (Layer-2) specification             | 1.0.2                                                  | 1.0.4                                                       | 1.0.4                                                  |
+| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                              | RP2-1.0.1                                                   | RP2-1.0.1                                              |
+| LoRaWAN class                                   | A                                                      | A                                                           | A                                                      |
+| ISM bands                                       | EU868, AS923                                           | AS923                                                       | US915                                                  |
+| Rapid Network Acquisition (US915/ AU915)        | NA                                                     | NA                                                          | Yes                                                    |
+| Default subband (US915/ AU915)                  | NA                                                     | NA                                                          | NA / Rapid Network Acquisition                         |
 
 ## Protocol version
 
