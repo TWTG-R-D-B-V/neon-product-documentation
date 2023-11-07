@@ -52,6 +52,7 @@ The encoder/decoder script:
 - **type**: the device type abbreviation
 - **generation timestamp**: the timestamp on which the codec script was generated
 - **commit hash**: the commit hash of the source from which the codec was generated
+- The codec is minified by default, but a not-minified version is available with the `.plain` postfix.
 
 ### Conversion examples
 
