@@ -9,4 +9,4 @@ The manual version depends on the production batch of your product. The product 
 | Batch  | Serial number example  | Applicable manual version  |
 |---|---|---:|
 | AA  | LD 01 20 **AA** 00001 | *6008_**AA**_Product-Manual-NEON-Vibration-Sensor_x* |
-| AB  | LD 01 21 **AB** 00001 | *6008_**AB**_Product-Manual-NEON-Vibration-Sensor_x* |
+| AB and higher | LD 01 21 **AB** 00001 | *6008_**AB**_Product-Manual-NEON-Vibration-Sensor_x* |

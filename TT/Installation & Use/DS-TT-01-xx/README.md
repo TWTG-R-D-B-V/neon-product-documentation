@@ -11,4 +11,4 @@ The batch can be read from the serial number.
 | Batch  | Serial number example  | Applicable manual version |
 |---|---|---:|
 | AA  | TT 01 20 **AA** 00001 | *6008_**AA**_Product-Manual-NEON-Temperature-Transmitter_x* |
-| AB  | TT 01 21 **AB** 00001 | *6008_**AB**_Product-Manual-NEON-Temperature-Transmitter_x* |
+| AB and higher | TT 01 21 **AB** 00001 | *6008_**AB**_Product-Manual-NEON-Temperature-Transmitter_x* |
