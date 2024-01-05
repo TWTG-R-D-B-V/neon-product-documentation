@@ -1,4 +1,4 @@
-var encoder = require('../../encoder_tt_rev-3');
+var encoder = require('../../encoder_tt_rev-4');
 
 // protocol v4
 
@@ -40,7 +40,7 @@ function encode(tag, object) {
   console.log("```")
   console.log(JSON.stringify(object, null, 4))
   console.log("```")
-  bytestring = Buffer.from(encoder.encodeDownlink(object).bytes)
+  bytestring = Buffer.from(encoder.encodeDownlink({data: object}).bytes)
   console.log("Bytestring (hexidecimal):")
   console.log("```")
   console.log(bytestring.toString('hex'))

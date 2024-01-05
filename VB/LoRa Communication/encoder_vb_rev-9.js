@@ -1,6 +1,6 @@
 /**
- * Filename             : encoder_vb_rev-8.js
- * Latest commit        : 5a3490992
+ * Filename             : encoder_vb_rev-9.js
+ * Latest commit        : 0a96691ed
  * Protocol v2 document : 6013_P20-002_Communication-Protocol-NEON-Vibration-Sensor_E.pdf
  * Protocol v3 document : NEON-Vibration-Sensor_Communication-Protocol-v3_DS-VB-xx-xx_6013_3_A2.pdf
  *
@@ -44,9 +44,12 @@
  * - Removed scaling from sensor data config, as it is obsolete due to  auto scaling
  * - Changed "frequency_range.peak_acceleration" to "frequency_range.acceleration" in sensor configuration message
  * - Changed "frequency_range.rms_velocity" to "frequency_range.velocity" in sensor configuration message
- * 
+ *
+ * 2023-12-12 revision 9
+ * - Added support of LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ *
  * YYYY-MM-DD revision X
- * 
+ *
  */
 
 if (typeof module !== 'undefined') {
@@ -92,9 +95,11 @@ if (typeof module !== 'undefined') {
 var mask_byte = 255;
 
 /**
-  * Entry point for ThingPark
-  */
-function encodeDownlink(input) {
+ * Generic entry point (throws Errors)
+ */
+function _encode(input) {
+  input = input.data;
+
   // Encode downlink messages sent as
   // object to an array or buffer of bytes.
 
@@ -272,17 +277,29 @@ function encodeDownlink(input) {
 }
 
 /**
-  * Entry point for Chirpstack v3
-  */
-function Encode(fPort, obj) {
-  return encodeDownlink(obj).bytes;
+ * LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ */
+function encodeDownlink(input) {
+  try {
+    return _encode(input);
+  } catch (error) {
+    return { errors: [error.message] };
+  }
 }
 
 /**
-  * Entry point for TTN
-  */
-function Encoder(obj, fPort) { // Used for The Things Network server
-  return Encode(fPort, obj);
+ * Entry point for Chirpstack v3
+ */
+function Encode(fPort, obj) {
+  var input = { data: obj };
+  return _encode({data: obj, fPort: fPort}).bytes;
+}
+
+/**
+ * Entry point for TTN
+ */
+function Encoder(obj, fPort) {
+  return _encode({data: obj, fPort: fPort}).bytes;
 }
 
 function encode_base_config(bytes, obj) {

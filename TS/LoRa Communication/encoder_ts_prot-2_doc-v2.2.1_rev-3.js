@@ -1,15 +1,26 @@
 /**
- * Filename          : encoder-cs_doc-A_rev-0.js
- * Latest commit     : de7ef742
- * Protocol document : A
+ * Filename          : encoder-ts_doc-D_rev-3.js
+ * Latest commit     : 618fa5c9
+ * Protocol document : D
  *
  * Release History
  *
- * 2021-11-09 revision 0
+ * 2020-10-14 revision 0
  * - Initial version
  *
- * YYYY-MM-DD revision X [ONGOING]
- * - None
+ * 2021-09-15 revision 1
+ * - Fixed the parsing of unconfirmed_repeat to number_of_unconfirmed_messages
+ * - Implement range check
+ *
+ * 2021-11-29 revision 2
+ * - Use sane configuration range for device configuration
+ * - Check the range of all configuration
+ *
+ * 2023-12-13 revision 3
+ * - Added support of LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ *
+ * YYYY-MM-DD revision X
+ *
  */
 
 if (typeof module !== 'undefined') {
@@ -17,12 +28,13 @@ if (typeof module !== 'undefined') {
   module.exports = {
     Encode: Encode,
     Encoder: Encoder,
+    encodeDownlink: encodeDownlink,
     EncodeDeviceConfig: EncodeDeviceConfig, // used by generate_config_bin.py
-    EncodeCsAppConfig: EncodeCsAppConfig, // used by generate_config_bin.py
+    EncodeTsAppConfig: EncodeTsAppConfig, // used by generate_config_bin.py
     encode_header: encode_header,
+    encode_events_mode: encode_events_mode,
     encode_device_config: encode_device_config,
-    encode_cs_app_config: encode_cs_app_config,
-    encode_config_switch_bitmask: encode_config_switch_bitmask,
+    encode_ts_app_config: encode_ts_app_config,
     encode_device_config_switch: encode_device_config_switch,
     encode_device_type: encode_device_type,
     encode_uint32: encode_uint32,
@@ -43,7 +55,7 @@ function Encode(fPort, obj) { // Used for ChirpStack (aka LoRa Network Server)
   var bytes = [];
 
   switch (obj.header.protocol_version) {
-    case 1: {
+    case 2: {
       switch (obj.header.message_type) {
         case "device_configuration": { // Device message
           encode_header(bytes, 5, obj.header.protocol_version);
@@ -54,24 +66,24 @@ function Encode(fPort, obj) { // Used for ChirpStack (aka LoRa Network Server)
         }
         case "application_configuration": { // Application message
           switch (obj.device_type) {
-            case "cs":
+            case "ts":
               encode_header(bytes, 6, obj.header.protocol_version);
-              encode_cs_app_config(bytes, obj);
+              encode_ts_app_config(bytes, obj);
               encode_uint16(bytes, calc_crc(bytes.slice(1)));
 
               break;
             default:
-              throw "Invalid device type!";
+              throw new Error("Invalid device type!");
           }
         }
         break;
         default:
-          throw "Invalid message type!"
+          throw new Error("Invalid message type!");
       }
       break;
     }
     default:
-      throw "Protocol version is not suppported!"
+      throw new Error("Protocol version is not suppported!");
   }
 
   return bytes;
@@ -79,6 +91,17 @@ function Encode(fPort, obj) { // Used for ChirpStack (aka LoRa Network Server)
 
 function Encoder(obj, fPort) { // Used for The Things Network server
   return Encode(fPort, obj);
+}
+
+/**
+ * LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ */
+function encodeDownlink(input) {
+  try {
+    return { bytes: Encode(15, input.data), fPort: 15 };
+  } catch (error) {
+    return { errors: [error.message] };
+  }
 }
 
 /**
@@ -92,13 +115,25 @@ function EncodeDeviceConfig(obj) {
 }
 
 function encode_device_config(bytes, obj) {
+  // The following parameters refers to the same configuration, only different naming on different
+  // protocol version.
+  // Copy the parameter to a local one
+  var number_of_unconfirmed_messages = 0;
   if (typeof obj.bypassSanityCheck == "undefined")
   {
-    if (obj.number_of_unconfirmed_messages < 1 || obj.number_of_unconfirmed_messages > 5) {
-      throw new Error("number_of_unconfirmed_messages is outside of specification: " + obj.number_of_unconfirmed_messages);
+    if (typeof obj.number_of_unconfirmed_messages != "undefined") {
+      number_of_unconfirmed_messages = obj.number_of_unconfirmed_messages;
+    } else if (typeof obj.unconfirmed_repeat != "undefined") {
+      number_of_unconfirmed_messages = obj.unconfirmed_repeat;
+    } else {
+      throw new Error("Missing number_of_unconfirmed_messages OR unconfirmed_repeat parameter");
     }
+
     if (obj.communication_max_retries < 1 || obj.communication_max_retries > 10) {
-      throw new Error("communication_max_retries is outside of specification: " + obj.communication_max_retries);
+        throw new Error("communication_max_retries is outside of specification: " + obj.communication_max_retries);
+    }
+    if (number_of_unconfirmed_messages < 1 || number_of_unconfirmed_messages > 5) {
+      throw new Error("number_of_unconfirmed_messages is outside of specification: " + number_of_unconfirmed_messages);
     }
     if (obj.periodic_message_random_delay_seconds < 0 || obj.periodic_message_random_delay_seconds > 255) {
       throw new Error("periodic_message_random_delay_seconds is outside of specification: " + obj.periodic_message_random_delay_seconds);
@@ -118,7 +153,7 @@ function encode_device_config(bytes, obj) {
   }
   encode_device_config_switch(bytes, obj.switch_mask);
   encode_uint8(bytes, obj.communication_max_retries);             // Unit: -
-  encode_uint8(bytes, obj.number_of_unconfirmed_messages);        // Unit: -
+  encode_uint8(bytes, number_of_unconfirmed_messages);            // Unit: -
   encode_uint8(bytes, obj.periodic_message_random_delay_seconds); // Unit: s
   encode_uint16(bytes, obj.status_message_interval_seconds / 60); // Unit: minutes
   encode_uint8(bytes, obj.status_message_confirmed_interval);     // Unit: -
@@ -132,42 +167,53 @@ function encode_device_config(bytes, obj) {
 }
 
 /**
- * CS application encoder
+ * TS application encoder
  */
-function EncodeCsAppConfig(obj) {
+function EncodeTsAppConfig(obj) {
   var bytes = [];
-  encode_cs_app_config(bytes, obj);
+  encode_ts_app_config(bytes, obj);
 
   return bytes;
 }
 
-function encode_cs_app_config(bytes, obj) {
+function encode_ts_app_config(bytes, obj) {
   if (typeof obj.bypassSanityCheck == "undefined")
   {
-    if (obj.device_type != "cs") {
+    if (obj.device_type != "ts") {
       throw new Error( "Incorrect device type: " + obj.device_type);
     }
-    if (obj.magnet_measurement_interval_seconds < 1 || obj.magnet_measurement_interval_seconds > 255) {
-      throw new Error( "magnet_measurement_interval_seconds is outside of specification: " + obj.magnet_measurement_interval_seconds);
+    if (obj.temperature_measurement_interval_seconds < 1 || obj.temperature_measurement_interval_seconds > 28800) {
+      throw new Error( "temperature_measurement_interval_seconds is outside of specification: " + obj.temperature_measurement_interval_seconds);
     }
-    if (obj.magnitude_threshold < 0 || obj.magnitude_threshold > 31875) {
-      throw new Error( "magnitude_threshold is outside of specification: " + obj.magnitude_threshold);
+    if (obj.periodic_event_message_interval < 0 || obj.periodic_event_message_interval > 28800) {
+      throw new Error( "periodic_event_message_interval is outside of specification: " + obj.periodic_event_message_interval);
     }
-    if (obj.magnitude_hysteresis < 0 || obj.magnitude_hysteresis > 31875) {
-      throw new Error( "magnitude_hysteresis is outside of specification: " + obj.magnitude_hysteresis);
-    }
-    if (obj.magnitude_hysteresis > obj.magnitude_threshold) {
-      throw new Error( "magnitude_hysteresis is greater than magnitude_threshold");
-    }
-    if (obj.periodic_event_message_interval_seconds < 60 || obj.periodic_event_message_interval_seconds > 604800) {
-      throw new Error( "periodic_event_message_interval_seconds is outside of specification: " + obj.periodic_event_message_interval_seconds);
+    for (let i = 0; i < obj.events.length; i++) {
+      if (obj.events[i].threshold_temperature < -120.00 || obj.events[i].threshold_temperature > 120.00) {
+        throw new Error( "threshold_temperature[" + i + "] is outside of specification: " + obj.events[i].threshold_temperature);
+      }
+      if (obj.events[i].mode != "off") {
+        if (obj.events[i].measurement_window < 1 || obj.events[i].measurement_window > 144) {
+          throw new Error( "measurement_window[" + i + "] is outside of specification: " + obj.events[i].measurement_window);
+        }
+      }
     }
   }
   encode_device_type(bytes, obj.device_type);
-  encode_uint8(bytes, obj.magnet_measurement_interval_seconds); // Unit: s
-  encode_uint8(bytes, obj.magnitude_threshold / 125);                 // 125 milligauss per LSB
-  encode_uint8(bytes, obj.magnitude_hysteresis / 125);                // 125 milligauss per LSB
-  encode_uint16(bytes, obj.periodic_event_message_interval_seconds / 60.0);  // Unit: minutes
+  encode_uint16(bytes, obj.temperature_measurement_interval_seconds);   // Unit: s
+  encode_uint16(bytes, obj.periodic_event_message_interval);            // Unit: -
+  encode_events_mode(bytes, obj.events[0].mode);                        // Unit: -
+  encode_int16(bytes, obj.events[0].threshold_temperature * 100);       // Unit: 0.01'
+  encode_uint8(bytes, obj.events[0].measurement_window);                // Unit: -
+  encode_events_mode(bytes, obj.events[1].mode);                        // Unit: -
+  encode_int16(bytes, obj.events[1].threshold_temperature * 100);       // Unit: 0.01'
+  encode_uint8(bytes, obj.events[1].measurement_window);                // Unit: -
+  encode_events_mode(bytes, obj.events[2].mode);                        // Unit: -
+  encode_int16(bytes, obj.events[2].threshold_temperature * 100);       // Unit: 0.01'
+  encode_uint8(bytes, obj.events[2].measurement_window);                // Unit: -
+  encode_events_mode(bytes, obj.events[3].mode);                        // Unit: -
+  encode_int16(bytes, obj.events[3].threshold_temperature * 100);       // Unit: 0.01'
+  encode_uint8(bytes, obj.events[3].measurement_window);                // Unit: -
 }
 
 /* Helper Functions *********************************************************/
@@ -193,37 +239,32 @@ function encode_device_type(bytes, type) {
     case 'vs-mt':
       encode_uint8(bytes, 3);
       break;
-    case 'test':
-      encode_uint8(bytes, 4);
-      break;
-    case 'cs':
-      encode_uint8(bytes, 7);
-      break;
     default:
-      throw "Invalid device type!";
+      throw new Error("Invalid device type!");
       break;
   }
 }
 
-// helper function to encode the config_switch_bitmask
-function encode_config_switch_bitmask(bytes, bitmask) {
-  var config_switch_bitmask = 0;
-  if (bitmask.use_confirmed_changed_message) {
-    config_switch_bitmask |= 1 << 0;
+// helper function to encode event.mode
+function encode_events_mode(bytes, mode) {
+  switch (mode){
+    case 'above':
+      encode_uint8(bytes, 1);
+      break;
+    case 'below':
+      encode_uint8(bytes, 2);
+      break;
+    case 'increasing':
+      encode_uint8(bytes, 3);
+      break;
+    case 'decreasing':
+      encode_uint8(bytes, 4);
+      break;
+    case 'off':
+    default:
+      encode_uint8(bytes, 0);
+      break;
   }
-  if (bitmask.turn_on_debug_data) {
-    config_switch_bitmask |= 1 << 1;
-  }
-  if (bitmask.activate_magnetometer_stability_test_on_X_axis) {
-    config_switch_bitmask |= 1 << 2;
-  }
-  if (bitmask.activate_magnetometer_stability_test_on_Y_axis) {
-    config_switch_bitmask |= 1 << 3;
-  }
-  if (bitmask.activate_magnetometer_stability_test_on_Z_axis) {
-    config_switch_bitmask |= 1 << 4;
-  }
-  bytes.push(config_switch_bitmask & mask_byte);
 }
 
 // helper function to encode the device switch_mask
@@ -231,9 +272,6 @@ function encode_device_config_switch(bytes, bitmask) {
   var config_switch_mask = 0;
   if (bitmask.enable_confirmed_event_message) {
     config_switch_mask |= 1 << 0;
-  }
-  if (bitmask.enable_debug_data) {
-    config_switch_mask |= 1 << 1;
   }
   bytes.push(config_switch_mask & mask_byte);
 }

@@ -1,4 +1,4 @@
-var decoder = require('../../decoder_tt_rev-5');
+var decoder = require('../../decoder_tt_rev-6');
 
 // protocol v4
 var tt_BootPattern = [0x40, 0x01];

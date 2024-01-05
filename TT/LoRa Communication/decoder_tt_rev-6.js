@@ -1,7 +1,7 @@
 /**
- * Filename             : decoder_tt_rev-5.js
- * Latest commit        : 6523e5b2
- * Protocol v2 document : 6020_P20-002_Communication-Protocol-NEON-Temperature-Transmitter_C.pdf 
+ * Filename             : decoder_tt_rev-6.js
+ * Latest commit        : 1cbefd54
+ * Protocol v2 document : 6020_P20-002_Communication-Protocol-NEON-Temperature-Transmitter_C.pdf
  * Protocol v3 document : 6020_AB_Communication-Protocol-NEON-Temperature-Transmitter_D.pdf
  * Protocol v4 document : NEON-Temperature-Transmitter_Communication-Protocol-v4_DS-TT-xx-xx_4003_4_A2.pdf
  *
@@ -49,13 +49,16 @@
  *
  * 2022-11-15 revision 4
  * - Fixed: false error on decoding extended event message
- * 
+ *
  * 2023-02-17 revision 5
  * - Added decoder for TS006 DevVersion
  * - Removed minor reboot reason config
  *
+ * 2023-12-12 revision 6
+ * - Added support of LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ *
  * YYYY-MM-DD revision X
- * - 
+ *
  */
 
 if (typeof module !== 'undefined') {
@@ -100,10 +103,16 @@ if (typeof module !== 'undefined') {
 }
 
 /**
- * Decoder for ThingPark network server
+ * LoRaWAN Payload Codec API Specification (TS013-1.0.0)
  */
 function decodeUplink(input) {
-  return Decode(input.fPort, input.bytes)
+  let result = {};
+  try {
+      result.data = Decode(input.fPort, input.bytes);
+  } catch (error) {
+      result.errors = [error.message];
+  }
+  return result;
 }
 
 /**
@@ -233,11 +242,11 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
       }
       break;
     }
-  
+
     default:
       throw new Error("Unsupported protocol version!");
   }
-  
+
   return decoded;
 }
 

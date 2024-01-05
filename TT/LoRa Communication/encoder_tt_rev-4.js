@@ -1,7 +1,7 @@
 /**
- * Filename             : encoder_tt_rev-3.js
- * Latest commit        : 910968dc
- * Protocol v2 document : 6020_P20-002_Communication-Protocol-NEON-Temperature-Transmitter_C.pdf 
+ * Filename             : encoder_tt_rev-4.js
+ * Latest commit        : 3deafe64
+ * Protocol v2 document : 6020_P20-002_Communication-Protocol-NEON-Temperature-Transmitter_C.pdf
  * Protocol v3 document : 6020_AB_Communication-Protocol-NEON-Temperature-Transmitter_D.pdf
  * Protocol v4 document : NEON-Temperature-Transmitter_Communication-Protocol-v4_DS-TT-xx-xx_4003_4_A2.pdf
  *
@@ -27,7 +27,7 @@
  *   + application -> sensor
  * - Updated based on the changes from PT
  *   + added checking the threshold values
- *   + added cs and pt device types 
+ *   + added cs and pt device types
  * - Protocol V4, Updated based on the changes from LD/VB
  * -- Added configUpdateReq.
  * -- Separated the sensor configuration into Sensor configuration and sensor conditions configuration
@@ -37,8 +37,11 @@
  * -- Uses ThingPark as default entry point where fPort is not an input but an output.
  * - Used throw new Error instead of throw
  *
+ * 2023-12-12 revision 4
+ * - Added support of LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ *
  * YYYY-MM-DD revision X
- * - 
+ *
  */
 
 if (typeof module !== 'undefined') {
@@ -79,10 +82,9 @@ if (typeof module !== 'undefined') {
 
 var mask_byte = 255;
 
-/**
-  * Entry point for ThingPark
-  */
-function encodeDownlink(input) {
+function _encode(input) {
+  input = input.data;
+
   // Encode downlink messages sent as
   // object to an array or buffer of bytes.
 
@@ -225,10 +227,21 @@ function encodeDownlink(input) {
 }
 
 /**
+ * LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ */
+function encodeDownlink(input) {
+  try {
+    return _encode(input);
+  } catch (error) {
+    return { errors: [error.message] };
+  }
+}
+
+/**
   * Entry point for Chirpstack v3
   */
  function Encode(fPort, obj) {
-  return encodeDownlink(obj).bytes;
+  return _encode({data: obj}).bytes;
 }
 
 /**
@@ -365,16 +378,16 @@ function encode_sensor_conditions_configuration_v4(bytes, payload) {
     // threshold_temperature
     if (payload.event_conditions[idx].mode == 'above' ||
       payload.event_conditions[idx].mode == 'below') {
-      if (payload.event_conditions[idx].threshold_temperature > 1850 || 
+      if (payload.event_conditions[idx].threshold_temperature > 1850 ||
         payload.event_conditions[idx].threshold_temperature < -270) {
         throw new Error("Threshold_temperature is outside of specification: " + payload.event_conditions[idx].threshold_temperature);
       }
     }
     else {
-      if (payload.event_conditions[idx].threshold_temperature > 2120 || 
+      if (payload.event_conditions[idx].threshold_temperature > 2120 ||
         payload.event_conditions[idx].threshold_temperature < 0) {
         throw new Error("Threshold_temperature is outside of specification: " + payload.event_conditions[idx].threshold_temperature);
-      } 
+      }
     }
 
     // measurement_window

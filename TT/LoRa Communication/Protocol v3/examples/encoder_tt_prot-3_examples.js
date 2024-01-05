@@ -1,4 +1,4 @@
-var encoder = require('../../encoder_tt_rev-3');
+var encoder = require('../../encoder_tt_rev-4');
 
 // protocol v3
 var tt_AppPattern = {
