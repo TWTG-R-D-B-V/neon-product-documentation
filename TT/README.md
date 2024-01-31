@@ -1,11 +1,11 @@
 # NEON Temperature Transmitter
 
-The NEON Temperature Transmitter provides insight on extreme temperatures and can send alerts if set triggers are reached.
+The NEON Temperature Transmitter provides insight into extreme temperatures and can send alerts if set triggers are reached.
 This folder contains the latest product documentation, please note that documents may be updated regularly.
 
 https://www.twtg.io/products/neon-temperature-transmitter/
 
-In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+In case you have any technical questions, or an issue to report please use the https://twtg.io/servicedesk.
 
 ## Configuration
 

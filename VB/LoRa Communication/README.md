@@ -1,8 +1,8 @@
 # LoRa Communication
 
-In this folder all documentation and scripts related to LoRa communication of the Vibration Sensor can be found.
+In this folder, all documentation and scripts related to LoRa communication of the Vibration Sensor can be found.
 
-In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+In case you have any technical questions, or an issue to report please use the https://twtg.io/servicedesk.
 
 ## Overview table
 
@@ -35,7 +35,7 @@ After tailoring the settings to your application you can then generate a LoRaWAN
 ## Conversion
 
 The Vibration Sensor communicates over LoRaWAN using a binary protocol.
-Usually the binary protocol is converted at the LoRa network server to an easier to handle format: JSON.
+Usually, the binary protocol is converted at the LoRa network server to an easier-to-handle format: JSON.
 
 - encoding: from JSON to a binary string for the Vibration Sensor
 - decoding: from a binary string from the Vibration Sensor to JSON

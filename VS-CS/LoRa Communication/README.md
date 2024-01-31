@@ -1,8 +1,8 @@
 # LoRa Communication
 
-In this folder all documentation and scripts related to LoRa communication of the NEON Contact Sensor can be found.
+In this folder, all documentation and scripts related to LoRa communication of the NEON Contact Sensor can be found.
 
-In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+In case you have any technical questions, or an issue to report please use the https://twtg.io/servicedesk.
 
 ## Overview table
 

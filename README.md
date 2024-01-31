@@ -1,7 +1,7 @@
 # NEON product line
 ## Product documentation of the NEON product line
 
-In this repository all product documentation form the TWTG NEON product line can be found. 
+In this repository, all product documentation from the TWTG NEON product line can be found. 
 
 The documentation is grouped per product type:
 
@@ -17,5 +17,5 @@ The documentation is grouped per product type:
 
 ## Service Desk for NEON products
 
-In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+In case you have any technical questions, or an issue to report please use the https://twtg.io/servicedesk.
 

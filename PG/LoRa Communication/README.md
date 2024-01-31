@@ -1,9 +1,9 @@
 # LoRa Communication
 
-In this folder all documentation and scripts related to LoRa communication of the Pressure Gauge can be found.
+In this folder, all documentation and scripts related to LoRa communication of the Pressure Gauge can be found.
 The Pressure Sensor and Pressure Gauge use the same RT communication module and therefore their communication protocols are the same.
 
-In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+In case you have any technical questions, or an issue to report please use the https://twtg.io/servicedesk.
 
 ## Overview table
 
@@ -35,7 +35,7 @@ After tailoring the settings to your application you can then generate a LoRaWAN
 ## Conversion
 
 The Pressure Gauge communicates over LoRaWAN using a binary protocol.
-Usually the binary protocol is converted at the LoRa network server to an easier to handle format: JSON.
+Usually, the binary protocol is converted at the LoRa network server to an easier-to-handle format: JSON.
 
 - encoding: from JSON to a binary string for the Pressure Gauge
 - decoding: from a binary string from the Pressure Gauge to JSON
@@ -58,7 +58,7 @@ The encoder/decoder script:
 
 Examples of uplink and downlink messages are available: [./Protocol v1/examples/](./Protocol%20v1/examples/).
 The examples follow the [TS013-1.0.0 Payload Codec API](https://resources.lora-alliance.org/technical-specifications/ts013-1-0-0-payload-codec-api) specification.
-The examples are in JSON, which is an arrays of messages with input and expected output when encoding/decoding.
+The examples are in JSON, which is an array of messages with input and expected output when encoding/decoding.
 JSON schemas for the JSON examples can be found here: https://github.com/TWTG-R-D-B-V/lorawan-payload-codec-tools/tree/main/schemas .
 
 ## Known issues

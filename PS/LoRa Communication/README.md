@@ -1,9 +1,9 @@
 # LoRa Communication
 
-In this folder all documentation and scripts related to LoRa communication of the Pressure Sensor can be found.
+In this folder, all documentation and scripts related to LoRa communication of the Pressure Sensor can be found.
 The Pressure Sensor and Pressure Gauge use the same RT communication module and therefore their communication protocols are the same.
 
-In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+In case you have any technical questions, or an issue to report please use the https://twtg.io/servicedesk.
 
 ## Overview table
 
@@ -35,7 +35,7 @@ After tailoring the settings to your application you can then generate a LoRaWAN
 ## Conversion
 
 The Pressure Sensor communicates over LoRaWAN using a binary protocol.
-Usually the binary protocol is converted at the LoRa network server to an easier to handle format: JSON.
+Usually, the binary protocol is converted at the LoRa network server to an easier-to-handle format: JSON.
 
 - encoding: from JSON to a binary string for the Pressure Sensor
 - decoding: from a binary string from the Pressure Sensor to JSON

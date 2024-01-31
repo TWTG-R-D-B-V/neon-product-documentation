@@ -4,7 +4,7 @@ The NEON NFC Tag is a passive data storage that allows operators to digitally id
 
 https://www.twtg.io/products/neon-nfc-tag/
 
-In case you have any technical question, or an issue to report please use the https://twtg.io/servicedesk.
+In case you have any technical questions, or an issue to report please use the https://twtg.io/servicedesk.
 
 ![](../.resources/nfc.jpg) 
 

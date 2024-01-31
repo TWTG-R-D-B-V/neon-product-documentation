@@ -2,7 +2,7 @@
 
 Based on magnetic field detection, the asset’s position information is provided by the NEON Contact Sensor and made remotely available within the application platform in near-real-time.
 When applied for a variety of use cases, these wireless devices can contribute to increased production efficiency and reliability of operational processes.
-NEON Sensors are very user-friendly to be installed and maintained.
+NEON Sensors are very user-friendly to install and maintain.
 
 <https://www.twtg.io/products/neon-contact-sensor/>
 
