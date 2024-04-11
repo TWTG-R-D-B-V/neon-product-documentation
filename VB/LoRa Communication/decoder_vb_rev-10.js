@@ -1,6 +1,6 @@
 /**
- * Filename             : decoder_vb_rev-9.js
- * Latest commit        : 0a96691ed
+ * Filename             : decoder_vb_rev-10.js
+ * Latest commit        : 8d42d4eff
  * Protocol v2 document : 6013_P20-002_Communication-Protocol-NEON-Vibration-Sensor_E.pdf
  * Protocol v3 document : NEON-Vibration-Sensor_Communication-Protocol-v3_DS-VB-xx-xx_6013_3_A2.pdf
  *
@@ -53,6 +53,9 @@
  * 2023-12-12 revision 9
  * - For protocol v3, the frequency axis is calculated based on the resolution in sensor data message
  * - Added support of LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ *
+ * 2024-04-05 revision 10
+ * - Fixed issue where spectral_line_frequency in sensor data message was not accounted for in frequency offset calculation.
  *
  * YYYY-MM-DD revision X
  *
@@ -1482,14 +1485,13 @@ if (typeof module !== 'undefined') {
     sensor_data.magnitude = [];
 
     // convert from bin to Hz
-    var spectral_line_frequency = sensor_data.config.spectral_line_frequency * binToHzFactor;
+    var deltaF = sensor_data.config.spectral_line_frequency * binToHzFactor;
     // Start frequency
-    var frequency_offset = sensor_data.config.start_frequency * binToHzFactor;
+    var frequency_offset = sensor_data.config.start_frequency * deltaF;
     // Frequency offset for the chunk
-    frequency_offset += sensor_data.config.frame_number * chunk_size * spectral_line_frequency;
+    frequency_offset += sensor_data.config.frame_number * chunk_size * deltaF;
     for (i = 0; i < chunk_size; i++) {
-      var sample_fre
-      sensor_data.frequency[i] = frequency_offset + i * spectral_line_frequency;
+      sensor_data.frequency[i] = frequency_offset + i * deltaF;
       sensor_data.magnitude[i] = sensor_data.raw[i] * sensor_data.config.scale / 255;
 
     }
@@ -1517,4 +1519,3 @@ if (typeof module !== 'undefined') {
         return false;
     }
   }
-
