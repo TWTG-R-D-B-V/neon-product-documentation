@@ -1,6 +1,6 @@
 /**
- * Filename             : decoder_vb_rev-10.js
- * Latest commit        : 8d42d4eff
+ * Filename             : decoder_vb_rev-11.js
+ * Latest commit        : c7b357bce
  * Protocol v2 document : 6013_P20-002_Communication-Protocol-NEON-Vibration-Sensor_E.pdf
  * Protocol v3 document : NEON-Vibration-Sensor_Communication-Protocol-v3_DS-VB-xx-xx_6013_3_A2.pdf
  *
@@ -56,6 +56,9 @@
  *
  * 2024-04-05 revision 10
  * - Fixed issue where spectral_line_frequency in sensor data message was not accounted for in frequency offset calculation.
+ *
+ * 2024-06-11 revision 11
+ * - Fixed issue where start_frequency was calculated using starting line, instead of starting bin.
  *
  * YYYY-MM-DD revision X
  *
@@ -1486,8 +1489,8 @@ if (typeof module !== 'undefined') {
 
     // convert from bin to Hz
     var deltaF = sensor_data.config.spectral_line_frequency * binToHzFactor;
-    // Start frequency
-    var frequency_offset = sensor_data.config.start_frequency * deltaF;
+    // Start frequency (user sets starting bin)
+    var frequency_offset = sensor_data.config.start_frequency * binToHzFactor;
     // Frequency offset for the chunk
     frequency_offset += sensor_data.config.frame_number * chunk_size * deltaF;
     for (i = 0; i < chunk_size; i++) {
