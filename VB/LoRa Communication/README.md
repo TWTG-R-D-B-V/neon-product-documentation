@@ -10,16 +10,16 @@ This table gives an overview of the variants and versions.
 The device identifier (DS-xx-xx-xx) can be found on the device label.
 The production batch can be found in the serial number (LD 01 20 **AA** 00001).
 
-|                                                 | DS-LD-01-xx with DS-VB-01-xx for all firmware versions | DS-LD-01-03 with DS-VB-01-03 production batch AD and higher | DS-LD-02-00 with DS-VB-02-00 for all firmware versions |
-| ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------      | ------------------------------------------------------ |
-| Protocol version                                | [2](./Protocol%20v2/)                                  | [3](./Protocol%20v3/)                                       | [3](./Protocol%20v3/)                                  |
-| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/vb/v2/)  | [link](https://neon-configurator.twtg.io/neon/vb/v3/)       | [link](https://neon-configurator.twtg.io/neon/vb/v3/)  |
-| LoRaWAN MAC (Layer-2) specification             | 1.0.2                                                  | 1.0.4                                                       | 1.0.4                                                  |
-| LoRaWAN regional parameters (PHY) specification | 1.0.2revB                                              | RP2-1.0.1                                                   | RP2-1.0.1                                              |
-| LoRaWAN class                                   | A                                                      | A                                                           | A                                                      |
-| ISM bands                                       | EU868, AS923                                           | AS923                                                       | US915                                                  |
-| Rapid Network Acquisition (US915/ AU915)        | NA                                                     | NA                                                          | Yes                                                    |
-| Default subband (US915/ AU915)                  | NA                                                     | NA                                                          | NA / Rapid Network Acquisition                         |
+|                                                 | DS-LD-01-xx with DS-VB-01-xx for all firmware versions | DS-LD-01-03 with DS-VB-01-03 production batch AD and higher | DS-LD-02-00 with DS-VB-02-00 from production batch AA until and including batch AD | DS-LD-02-00 with DS-VB-02-00 from production batch AF and DS-LD-xx-xx with DS-VB-xx-xx after firmware update |
+| ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------      | ------------------------------------------------------ | ------------------------------------------------------ |
+| Protocol version| [2](./Protocol%20v2/) | [3](./Protocol%20v3/) | [3](./Protocol%20v3/) | [4](./Protocol%20v4/) |
+| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/vb/v2/)  | [link](https://neon-configurator.twtg.io/neon/vb/v3/)       | [link](https://neon-configurator.twtg.io/neon/vb/v3/)  | In progress  |
+| LoRaWAN MAC (Layer-2) specification             | 1.0.2 | 1.0.4 | 1.0.4 |1.0.4 |
+| LoRaWAN regional parameters (PHY) specification | 1.0.2revB | RP2-1.0.1 | RP2-1.0.1 | RP2-1.0.3 |
+| LoRaWAN class                                   | A      | A | A | A and B|
+| ISM bands                                       | EU868, AS923             | AS923 | US915 | EU868, US915, AS923, AU915|
+| Rapid Network Acquisition (US915/ AU915)        | NA | NA | Yes | Yes |
+| Default subband (US915/ AU915)                  | NA | NA | NA / Rapid Network Acquisition | NA / Rapid Network Acquisition |
 
 ## Protocol version
 
@@ -42,14 +42,21 @@ Usually, the binary protocol is converted at the LoRa network server to an easie
 
 ### Encoder / decoder
 
-This folder contains Javascript files which can help with the conversion in for example the LoRa network server.
-The scripts are compatible with all protocol versions.
+Each folder contains the respective Javascript files which can help with the conversion in, for example, the LoRa network server.
 
-The encoder/decoder script names are postfixed with version information:
+For protocols v2 and v3, the encoder/decoder script names are postfixed with version information:
 
     [encoder/decoder]_[type]_rev-[rev].js
 
 - **type**: the sensor type abbreviation
+- **rev**: the revision number of improvements of the scripts
+
+For protocol v4, the codec script names are postfixed with the version information:
+
+    [type]-[format]-[rev].js
+
+- **type**: the sensor type and protocol version abbreviation
+- **format**: script in plain or minified format
 - **rev**: the revision number of improvements of the scripts
 
 ### Conversion examples
