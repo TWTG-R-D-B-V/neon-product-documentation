@@ -1,6 +1,6 @@
 /**
- * Filename             : decoder_vb_rev-11.js
- * Latest commit        : c7b357bce
+ * Filename             : decoder_vb_rev-12.js
+ * Latest commit        : 1a72fc2f1
  * Protocol v2 document : 6013_P20-002_Communication-Protocol-NEON-Vibration-Sensor_E.pdf
  * Protocol v3 document : NEON-Vibration-Sensor_Communication-Protocol-v3_DS-VB-xx-xx_6013_3_A2.pdf
  *
@@ -60,6 +60,10 @@
  * 2024-06-11 revision 11
  * - Fixed issue where start_frequency was calculated using starting line, instead of starting bin.
  *
+ * 2024-08-30 revision 12
+ * - Reverted changes from revision 11
+ * - Fixed issue where v2 has a magic offset in the firmware for acceleration data, which is incorrect (fix_freq_offset).
+ *
  * YYYY-MM-DD revision X
  *
  */
@@ -95,7 +99,7 @@ if (typeof module !== 'undefined') {
    * LoRaWAN Payload Codec API Specification (TS013-1.0.0)
    */
   function decodeUplink(input) {
-    let result = {};
+    var result = {};
     try {
       result.data = Decode(input.fPort, input.bytes);
     } catch (error) {
@@ -565,11 +569,11 @@ if (typeof module !== 'undefined') {
     switch ((b >> 4) & 0x1) {
       case 0:
         result.resolution = "low_res";
-	var binToHzFactor = 1.62762;
+  var binToHzFactor = 1.62762;
         break;
       case 1:
-	result.resolution = "high_res";
-	var binToHzFactor = 0.8138;
+  result.resolution = "high_res";
+  var binToHzFactor = 0.8138;
       default:
         break;
     }
@@ -1465,6 +1469,7 @@ if (typeof module !== 'undefined') {
       throw new Error("Invalid sensor_data message length " + bytes.length + " instead of " + expected_length);
     }
 
+    var fix_freq_offset = 0;
     if (protocol_version == 3) {
       // byte[1..6]
       var obj = decode_sensor_data_config_v3(bytes, cursor);
@@ -1472,12 +1477,16 @@ if (typeof module !== 'undefined') {
       binToHzFactor = obj.binToHzFactor;
       chunk_size = 39;
       data_offset = 7;
-    } else {
+    } else { // protocol == 2
       // byte[1..5]
       sensor_data.config = decode_sensor_data_config(bytes, cursor, protocol_version);
       var binToHzFactor = 1.62762;
       chunk_size = 40;
       data_offset = 6;
+      // Fix for VBv2 where acceleration requires an offset
+      if (sensor_data.config.unit == "acceleration"){
+        fix_freq_offset = Math.min(2, sensor_data.config.start_frequency);
+      }
     }
 
     // byte[data_offset..45] data_offset depending on protocol version
@@ -1489,8 +1498,8 @@ if (typeof module !== 'undefined') {
 
     // convert from bin to Hz
     var deltaF = sensor_data.config.spectral_line_frequency * binToHzFactor;
-    // Start frequency (user sets starting bin)
-    var frequency_offset = sensor_data.config.start_frequency * binToHzFactor;
+    // Start frequency (user sets starting line)
+    var frequency_offset = (sensor_data.config.start_frequency - fix_freq_offset) * deltaF;
     // Frequency offset for the chunk
     frequency_offset += sensor_data.config.frame_number * chunk_size * deltaF;
     for (i = 0; i < chunk_size; i++) {

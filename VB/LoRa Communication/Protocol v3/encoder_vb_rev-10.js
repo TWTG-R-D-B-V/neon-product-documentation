@@ -1,6 +1,6 @@
 /**
- * Filename             : encoder_vb_rev-9.js
- * Latest commit        : 0a96691ed
+ * Filename             : encoder_vb_rev-10.js
+ * Latest commit        : 355c36fc5
  * Protocol v2 document : 6013_P20-002_Communication-Protocol-NEON-Vibration-Sensor_E.pdf
  * Protocol v3 document : NEON-Vibration-Sensor_Communication-Protocol-v3_DS-VB-xx-xx_6013_3_A2.pdf
  *
@@ -47,6 +47,9 @@
  *
  * 2023-12-12 revision 9
  * - Added support of LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ *
+ * 2024-09-06 revision 10
+ * - Added validation of frequency span and resolution in sensor_data_config to avoid invalid configurations.
  *
  * YYYY-MM-DD revision X
  *
@@ -482,6 +485,10 @@ function encode_vb_sensor_data_config_v2(bytes, obj) {
   // byte[28]
   encode_fft_selection(bytes, obj.selection);
 
+  // check for valid frequency span config
+  validate_frequency_span(obj.frequency.span.velocity, obj.frequency.resolution.velocity, "velocity");
+  validate_frequency_span(obj.frequency.span.acceleration, obj.frequency.resolution.acceleration, "acceleration");
+
   // byte[29..30]
   encode_uint16(bytes, obj.frequency.span.velocity.start);
   // byte[31..32]
@@ -540,6 +547,10 @@ function encode_vb_sensor_data_config_v3(bytes, payload) {
 
   // byte[28]
   encode_fft_selection(bytes, payload.selection);
+
+  // check for valid frequency span config
+  validate_frequency_span(payload.frequency.span.velocity, payload.frequency.resolution.velocity, "velocity");
+  validate_frequency_span(payload.frequency.span.acceleration, payload.frequency.resolution.acceleration, "acceleration");
 
   // byte[29..30]
   encode_uint16(bytes, payload.frequency.span.velocity.start);
@@ -1079,6 +1090,14 @@ function encode_channel_plan_v3(bytes, channel_plan) {
     default:
       throw new Error("channel_plan outside of specification: " + obj.channel_plan);
   }
+}
+
+// Helper function for validating frequency span
+function validate_frequency_span(span, resolution, label) {
+  var error = "";
+  if (span.start > 0 && span.start >= span.stop) error = ".start can not be equal to or higher than stop"
+  if (span.stop * resolution > 8192) error = ".stop * resolution.velocity cannot be higher than 8192";
+  if (error != "") throw new Error("frequency.span." + label + error)
 }
 
 // Helper function to encode config_type for PROTOCOL_VERSION_3
