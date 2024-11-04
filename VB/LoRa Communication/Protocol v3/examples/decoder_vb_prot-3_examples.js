@@ -1,4 +1,4 @@
-var decoder = require('../../decoder_vb_rev-11.js');
+var decoder = require('../decoder_vb_rev-12.js');
 
 var bootPattern = [0x31, 0x01, 0x03];
 var activated = [0x35, 0x06, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05];
