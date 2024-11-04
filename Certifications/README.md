@@ -1,9 +1,7 @@
 ## NEON product line certifications
 
-IECEx Certificate of Conformity for the NEON product family DS and main revision 02 can be found in the DS-xx-02-xx folder. Applicable for the following products:
+IECEx and ATEX for the NEON product family DS and main revision 01 can be found in the [DS-xx-01-xx](DS-xx-01-xx) folder. The certifications documents indicate which products are applicable to them.
 
-- [Pressure Gauge (PG)](PG): DS-RT-02-xx & DS-PG-02-xx
-- [Vibration Sensor (VB)](VB): DS-LD-02-xx & DS-VB-02-xx 
-- [Temperature Transmitter (TT)](TT): DS-TT-02-xx
+IECEx, ATEX and FM Certificates for the NEON product family DS and main revision 02 can be found in the DS-xx-02-xx folder. The certifications documents indicate which products are applicable to them.
 
 In case you have any technical questions, or an issue to report please use the https://twtg.io/servicedesk.
