@@ -10,16 +10,16 @@ In case you have any technical questions, or an issue to report please use the h
 This table gives an overview of the variants and versions.
 The device identifier (DS-xx-xx-xx) can be found on the device label.
 
-|                                                 | DS-RT-02-00 all firmware versions |
-| ----------------------------------------------- | --------------------------------- |
-| Protocol version                                | [1](./Protocol%20v1/)             |
-| NEON Configurator                               | _coming soon_                     |
-| LoRaWAN MAC (Layer-2) specification             | 1.0.4                             |
-| LoRaWAN regional parameters (PHY) specification | RP2-1.0.1                         |
-| LoRaWAN class                                   | A                                 |
-| ISM bands                                       | EU868, AS923, US915               |
-| Rapid Network Acquisition (US915)               | Yes                               |
-| Default subband (US915)                         | NA / Rapid Network Acquisition    |
+|                                                 | DS-RT-02-00 all firmware versions                       |
+| ----------------------------------------------- | --------------------------------------------------------|
+| Protocol version                                | [1](./Protocol%20v1/)                                   |
+| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/pg/v1/)   |
+| LoRaWAN MAC (Layer-2) specification             | 1.0.4                                                   |
+| LoRaWAN regional parameters (PHY) specification | RP2-1.0.1                                               |
+| LoRaWAN class                                   | A                                                       |
+| ISM bands                                       | EU868, AS923, US915, AU915 (on request)                 |
+| Rapid Network Acquisition (US915)               | Yes                                                     |
+| Default subband (US915)                         | NA / Rapid Network Acquisition                          |
 
 ## Protocol version
 

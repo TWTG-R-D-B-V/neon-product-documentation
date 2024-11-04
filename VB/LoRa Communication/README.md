@@ -13,11 +13,11 @@ The production batch can be found in the serial number (LD 01 20 **AA** 00001).
 |                                                 | DS-LD-01-xx with DS-VB-01-xx for all firmware versions | DS-LD-01-03 with DS-VB-01-03 production batch AD and higher | DS-LD-02-00 with DS-VB-02-00 from production batch AA until and including batch AD | DS-LD-02-00 with DS-VB-02-00 from production batch AF and DS-LD-xx-xx with DS-VB-xx-xx after firmware update |
 | ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------      | ------------------------------------------------------ | ------------------------------------------------------ |
 | Protocol version| [2](./Protocol%20v2/) | [3](./Protocol%20v3/) | [3](./Protocol%20v3/) | [4](./Protocol%20v4/) |
-| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/vb/v2/)  | [link](https://neon-configurator.twtg.io/neon/vb/v3/)       | [link](https://neon-configurator.twtg.io/neon/vb/v3/)  | In progress  |
+| NEON Configurator                               | [link](https://neon-configurator.twtg.io/neon/vb/v2/)  | [link](https://neon-configurator.twtg.io/neon/vb/v3/)       | [link](https://neon-configurator.twtg.io/neon/vb/v3/)  | [link](https://neon-configurator.twtg.io/neon/vb/v4/)  |
 | LoRaWAN MAC (Layer-2) specification             | 1.0.2 | 1.0.4 | 1.0.4 |1.0.4 |
 | LoRaWAN regional parameters (PHY) specification | 1.0.2revB | RP2-1.0.1 | RP2-1.0.1 | RP2-1.0.3 |
 | LoRaWAN class                                   | A      | A | A | A and B|
-| ISM bands                                       | EU868, AS923             | AS923 | US915 | EU868, US915, AS923, AU915|
+| ISM bands                                       | EU868, AS923| AS923| US915, AU915, AS923 (on request), EU868 (on request) | EU868, US915, AS923, AU915|
 | Rapid Network Acquisition (US915/ AU915)        | NA | NA | Yes | Yes |
 | Default subband (US915/ AU915)                  | NA | NA | NA / Rapid Network Acquisition | NA / Rapid Network Acquisition |
 
