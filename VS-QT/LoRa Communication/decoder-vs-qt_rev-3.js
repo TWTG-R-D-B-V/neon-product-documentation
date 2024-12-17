@@ -1,7 +1,7 @@
 /**
- * Filename          : decoder-ts_doc-C_rev-2.js
- * Latest commit     : 618fa5c9
- * Protocol document : C
+ * Filename             : decoder-vs-qt_rev-3.js
+ * Latest commit        : d9621906
+ * Protocol v2 document : Communication protocol V2 - P18-023 - VS-QT v2.2.pdf
  *
  * Release History
  *
@@ -9,12 +9,15 @@
  * - Initial version
  *
  * 2021-09-15 revision 1
- * - Break decoder into functionx
+ * - Break decoder into functions
  * - Updated reboot info decoder
  * - Added DecodeHexString to convert ASCII HEX string to byte string
  *
  * 2023-12-13 revision 2
  * - Added support of LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ *
+ * 2024-10-14 revision 3
+ * - Handle truncated payloads (e.g. due to max payload size depending on region and data rate)
  *
  * YYYY-MM-DD revision X
  *
@@ -35,7 +38,6 @@ if (typeof module !== 'undefined') {
     decode_uint8: decode_uint8,
     decode_int8: decode_int8,
     decode_reboot_info: decode_reboot_info,
-    decode_application_temperature: decode_application_temperature,
     from_hex_string: from_hex_string
   };
 }
@@ -61,16 +63,18 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
           break;
         }
 
-        case 1: { // Activated message
+        case 1: { // Calibrated message
+          decoded.calibrated = decode_calibrated_msg(bytes, cursor);
           break;
         }
 
-        case 2: { // Deactivated message
+        case 2: { // Not calibration message
+          decoded.not_calibrated = decode_not_calibrated_msg(bytes, cursor);
           break;
         }
 
         case 3: { // Application event message
-          decoded.application_event = decode_application_event_msg(bytes, cursor, decoded.header.protocol_version);
+          decoded.application_event = decode_application_event_msg(bytes, cursor);
           break;
         }
 
@@ -233,25 +237,6 @@ function uint32_to_hex(d) {
   return ('0000000' + (Number(d).toString(16).toUpperCase())).slice(-8);
 }
 
-// helper function to parse tt application temperature
-function decode_application_temperature(bytes, cursor, version) {
-  var temperature = {};
-
-  min = decode_int16(bytes, cursor) / 100;
-  max = decode_int16(bytes, cursor) / 100;
-  avg = decode_int16(bytes, cursor) / 100;
-
-  if (version == 2) {
-    temperature.min = min;
-    temperature.max = max;
-    temperature.avg = avg;
-  } else {
-    throw new Error("Invalid protocol version");
-  }
-
-  return temperature;
-}
-
 // helper function to parse reboot_info
 function decode_reboot_info(reboot_type, bytes, cursor) {
   var result;
@@ -336,8 +321,8 @@ function decode_reboot_info(reboot_type, bytes, cursor) {
 
 function message_types_lookup_v2(type_id) {
   type_names = ["boot",
-                "activated",
-                "deactivated",
+                "calibrated",
+                "not_calibrated",
                 "application_event",
                 "device_status",
                 "device_configuration",
@@ -361,19 +346,49 @@ function device_types_lookup_v2(type_id) {
   }
 }
 
+function not_calibrated_reasons_lookup_v2(reason_id) {
+  switch (reason_id) {
+    case 0:
+      return "Removed calibration";
+    case 1:
+      return "Timeout; measure calibration";
+    case 2:
+      return "Timeout; wait for open";
+    case 3:
+      return "Timeout; verify open";
+    case 4:
+      return "Expected open, measured closed";
+    case 5:
+      return "Timeout; wait for closed";
+    case 6:
+      return "Timeout; verify closed";
+    case 7:
+      return "Expected closed, measured open";
+
+    default:
+      return "unknown"
+  }
+}
+
+function state_lookup_v2(state_id) {
+  switch (state_id)
+  {
+    case 0:
+      return "open";
+    case 1:
+      return "closed";
+    default:
+      return "error";
+    }
+}
+
 function trigger_lookup_v2(trigger_id) {
   switch (trigger_id)
   {
     case 0:
-      return "timer";
+      return "state_transition";
     case 1:
-      return "condition_0";
-    case 2:
-      return "condition_1";
-    case 3:
-      return "condition_2";
-    case 4:
-      return "condition_3";
+      return "timer";
     default:
       return "unknown";
     }
@@ -392,8 +407,8 @@ Object.prototype.in = function () {
 function decode_boot_msg(bytes, cursor) {
   var boot = {};
 
-  var expected_length = 23;
-  if (bytes.length != expected_length) {
+  var expected_length = 25;
+  if (bytes.length != expected_length && bytes.length != 11) {
     throw new Error(
       "Invalid boot message length " +
       bytes.length +
@@ -408,46 +423,108 @@ function decode_boot_msg(bytes, cursor) {
 
   // byte[2..5]
   var version_hash = decode_uint32(bytes, cursor);
-  boot.version_hash = '0x' + uint32_to_hex(version_hash);
+  boot.version_hash = "0x" + uint32_to_hex(version_hash);
 
   // byte[6..7]
   var device_config_crc = decode_uint16(bytes, cursor);
-  boot.device_config_crc = '0x' + uint16_to_hex(device_config_crc);
+  boot.device_config_crc = "0x" + uint16_to_hex(device_config_crc);
 
   // byte[8..9]
   var application_config_crc = decode_uint16(bytes, cursor);
-  boot.application_config_crc = '0x' + uint16_to_hex(application_config_crc);
+  boot.application_config_crc = "0x" + uint16_to_hex(application_config_crc);
 
-  // byte[10]
-  var reset_flags = decode_uint8(bytes, cursor);
-  boot.reset_flags = '0x' + uint8_to_hex(reset_flags);
+  if (bytes.length == 11)
+  {
+    // truncated (DR0), fill in blanks
+    boot.calibration_crc = null;
+    boot.reset_flags = null;
+    boot.reboot_counter = null;
+    boot.reboot_info = null;
+    boot.last_device_state = null;
+    boot.bist = null;
+    return boot; // don't continue
+  }
 
-  // byte[11]
-  boot.reboot_counter = decode_uint8(bytes, cursor);
+  // byte[10..11]
+  var calibration_crc = decode_uint16(bytes, cursor);
+  boot.calibration_crc = "0x" + uint16_to_hex(calibration_crc);
 
   // byte[12]
+  var reset_flags = decode_uint8(bytes, cursor);
+  boot.reset_flags = "0x" + uint8_to_hex(reset_flags);
+
+  // byte[13]
+  boot.reboot_counter = decode_uint8(bytes, cursor);
+
+  // byte[14]
   var boot_type = decode_uint8(bytes, cursor);
 
-  // byte[13..20]
+  // byte[15..22]
   boot.reboot_info = decode_reboot_info(boot_type, bytes, cursor);
 
-  // byte[21]
+  // byte[23]
   boot.last_device_state = decode_uint8(bytes, cursor);
 
-  // byte[22]
+  // byte[24]
   var bist = decode_uint8(bytes, cursor);
-  boot.bist = '0x' + uint8_to_hex(bist);
+  boot.bist = "0x" + uint8_to_hex(bist);
 
   return boot;
 }
 
-function decode_application_event_msg(bytes, cursor, version) {
-  var application_event = {}
+function decode_calibrated_msg(bytes, cursor) {
+  var calibrated = {};
 
-  var expected_length = 9;
-  if (bytes.length != expected_length) {
+  var expected_length = 20;
+  if (bytes.length != expected_length && bytes.length != 11) {
     throw new Error(
-      "Invalid application_event message length " +
+      "Invalid calibrated message length " +
+      bytes.length +
+      " instead of " +
+      expected_length
+    );
+  }
+
+  // byte [1..6]
+  calibrated.calibration_vector = {};
+  calibrated.calibration_vector.x = decode_int16(bytes, cursor);
+  calibrated.calibration_vector.y = decode_int16(bytes, cursor);
+  calibrated.calibration_vector.z = decode_int16(bytes, cursor);
+
+  if (bytes.length == 11)
+  {
+    // truncated (DR0), fill in blanks
+    calibrated.open_verification_vector = {x: null, y: null, z: null};
+    calibrated.closed_verification_vector = {x: null, y: null, z: null};
+    calibrated.temperature = null;
+    return calibrated; // don't continue
+  }
+
+  // byte [7..12]
+  calibrated.open_verification_vector = {};
+  calibrated.open_verification_vector.x = decode_int16(bytes, cursor);
+  calibrated.open_verification_vector.y = decode_int16(bytes, cursor);
+  calibrated.open_verification_vector.z = decode_int16(bytes, cursor);
+
+  // byte [13..18]
+  calibrated.closed_verification_vector = {};
+  calibrated.closed_verification_vector.x = decode_int16(bytes, cursor);
+  calibrated.closed_verification_vector.y = decode_int16(bytes, cursor);
+  calibrated.closed_verification_vector.z = decode_int16(bytes, cursor);
+
+  // byte [19]
+  calibrated.temperature = decode_int8(bytes, cursor);
+
+  return calibrated;
+}
+
+function decode_not_calibrated_msg(bytes, cursor) {
+  var not_calibrated = {};
+
+  var expected_length = 21;
+  if (bytes.length != expected_length && bytes.length != 11) {
+    throw new Error(
+      "Invalid not calibrated message length " +
       bytes.length +
       " instead of " +
       expected_length
@@ -455,20 +532,106 @@ function decode_application_event_msg(bytes, cursor, version) {
   }
 
   // byte[1]
-  trigger = decode_uint8(bytes, cursor);
-  application_event.trigger = trigger_lookup_v2(trigger);
+  var reason_id = decode_uint8(bytes, cursor);
+  not_calibrated.reason = not_calibrated_reasons_lookup_v2(reason_id);
 
   // byte[2..7]
-  application_event.temperature = {};
+  if (reason_id.in(2,3,4,5,6,7)) {
+    not_calibrated.calibration_vector = {};
+    not_calibrated.calibration_vector.x = decode_int16(bytes, cursor);
+    not_calibrated.calibration_vector.y = decode_int16(bytes, cursor);
+    not_calibrated.calibration_vector.z = decode_int16(bytes, cursor);
+  } else {
+    cursor.value += 6;
+  }
 
-  application_event.temperature = decode_application_temperature(bytes, cursor, version);
+  if (bytes.length == 11)
+  {
+    // truncated (DR0), fill in blanks
+    if (reason_id.in(4,5,6,7)) {
+      not_calibrated.open_verification_vector = {x: null, y: null, z: null};
+    }
+    if (reason_id.in(7)) {
+      not_calibrated.closed_verification_vector = {x: null, y: null, z: null};
+    }
+    if (!reason_id.in(0)) {
+      not_calibrated.temperature = null;
+    }
+    return not_calibrated; // don't continue
+  }
 
-  // byte[8]
-  conditions = decode_uint8(bytes, cursor);
-  application_event.condition_0 = (conditions & 1);
-  application_event.condition_1 = ((conditions >> 1) & 1);
-  application_event.condition_2 = ((conditions >> 2) & 1);
-  application_event.condition_3 = ((conditions >> 3) & 1);
+  // byte[8..13]
+  if (reason_id.in(4,5,6,7)) {
+    not_calibrated.open_verification_vector = {};
+    not_calibrated.open_verification_vector.x = decode_int16(bytes, cursor);
+    not_calibrated.open_verification_vector.y = decode_int16(bytes, cursor);
+    not_calibrated.open_verification_vector.z = decode_int16(bytes, cursor);
+  } else {
+    cursor.value += 6;
+  }
+
+  // byte[14..19]
+  if (reason_id.in(7)) {
+    not_calibrated.closed_verification_vector = {};
+    not_calibrated.closed_verification_vector.x = decode_int16(bytes, cursor);
+    not_calibrated.closed_verification_vector.y = decode_int16(bytes, cursor);
+    not_calibrated.closed_verification_vector.z = decode_int16(bytes, cursor);
+  } else {
+    cursor.value += 6;
+  }
+
+  // byte[20]
+  if (!reason_id.in(0)) {
+    not_calibrated.temperature = decode_int8(bytes, cursor);
+  }
+
+  return not_calibrated;
+}
+
+function decode_application_event_msg(bytes, cursor) {
+  var application_event = {};
+
+  var expected_length_without_debug = 5;
+  var expected_length_with_debug = 12;
+  if (
+    bytes.length != expected_length_without_debug &&
+    bytes.length != expected_length_with_debug &&
+    bytes.length != 11 // with debug, but truncated (DR0)
+  ) {
+    throw new Error(
+      "Invalid application_event message length " +
+      bytes.length +
+      " instead of " +
+      expected_length_with_debug +
+      " OR " +
+      expected_length_without_debug
+    );
+  }
+
+  // byte[1]
+  var state_trigger = decode_uint8(bytes, cursor);
+  application_event.state = state_lookup_v2(state_trigger & 0x03);
+  application_event.trigger = trigger_lookup_v2(state_trigger >> 2);
+
+  // byte[2]
+  application_event.state_transition_sequence = decode_uint8(bytes, cursor);
+
+  // byte[3..4]
+  application_event.angle = decode_int16(bytes, cursor) * 0.1;
+
+  if (bytes.length == expected_length_with_debug) {
+    // any debug values provided?
+    application_event.debug = {};
+
+    // byte[5]
+    application_event.debug.temperature = decode_int8(bytes, cursor);
+
+    // byte[6..11]
+    application_event.debug.vector = {};
+    application_event.debug.vector.x = decode_int16(bytes, cursor);
+    application_event.debug.vector.y = decode_int16(bytes, cursor);
+    application_event.debug.vector.z = decode_int16(bytes, cursor);
+  }
 
   return application_event;
 }
@@ -476,8 +639,8 @@ function decode_application_event_msg(bytes, cursor, version) {
 function decode_device_status_msg(bytes, cursor) {
   var device_status = {};
 
-  var expected_length = 18;
-  if (bytes.length != expected_length) {
+  var expected_length = 21;
+  if (bytes.length != expected_length && bytes.length != 11) {
     throw new Error(
       "Invalid device_status message length " +
       bytes.length +
@@ -488,34 +651,52 @@ function decode_device_status_msg(bytes, cursor) {
 
   // byte[1..2]
   var device_config_crc = decode_uint16(bytes, cursor);
-  device_status.device_config_crc = '0x' + uint16_to_hex(device_config_crc);
+  device_status.device_config_crc = "0x" + uint16_to_hex(device_config_crc);
 
   // byte[3..4]
   var application_config_crc = decode_uint16(bytes, cursor);
-  device_status.application_config_crc = '0x' + uint16_to_hex(application_config_crc);
+  device_status.application_config_crc =
+    "0x" + uint16_to_hex(application_config_crc);
 
-  // byte[5]
+  // byte[5..6]
+  var calibration_crc = decode_uint16(bytes, cursor);
+  device_status.calibration_crc = "0x" + uint16_to_hex(calibration_crc);
+
+  // byte[7]
   device_status.event_counter = decode_uint8(bytes, cursor);
 
-  // byte[6..11]
+  // byte[8]
+  device_status.unstable_counter = decode_uint8(bytes, cursor);
+
+  if (bytes.length == 11) {
+    // truncated (DR0), fill in blanks
+    device_status.battery_voltage = {low: null, high: null, settle: null};
+    device_status.temperature = {min: null, max: null, avg: null};
+    device_status.tx_counter = null;
+    device_status.avg_rssi = null;
+    device_status.avg_snr = null;
+    return device_status; // don't continue
+  }
+
+  // byte[9..14]
   device_status.battery_voltage = {};
   device_status.battery_voltage.low = decode_uint16(bytes, cursor) / 1000.0;
   device_status.battery_voltage.high = decode_uint16(bytes, cursor) / 1000.0;
   device_status.battery_voltage.settle = decode_uint16(bytes, cursor) / 1000.0;
 
-  // byte[12..14]
+  // byte[15..17]
   device_status.temperature = {};
   device_status.temperature.min = decode_int8(bytes, cursor);
   device_status.temperature.max = decode_int8(bytes, cursor);
   device_status.temperature.avg = decode_int8(bytes, cursor);
 
-  // byte[15]
+  // byte[18]
   device_status.tx_counter = decode_uint8(bytes, cursor);
 
-  // byte[16]
+  // byte[19]
   device_status.avg_rssi = -decode_uint8(bytes, cursor);
 
-  // byte[17]
+  // byte[20]
   device_status.avg_snr = decode_int8(bytes, cursor);
 
   return device_status;

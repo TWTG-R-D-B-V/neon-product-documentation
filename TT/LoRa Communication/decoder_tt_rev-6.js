@@ -455,7 +455,6 @@ function decode_sensor_temperature_v4(bytes, cursor) {
       temperature.status = "Hardware Error";
     }
     else {
-      console.log(min, max, avg);
       throw new Error("Invalid min, max, avg. Hardware Error is included!");
     }
   } else {

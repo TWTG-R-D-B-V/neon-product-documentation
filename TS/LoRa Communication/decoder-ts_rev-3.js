@@ -1,15 +1,23 @@
 /**
- * Filename          : decoder-cs_doc-A_rev-1.js
- * Latest commit     : 618fa5c9
- * Protocol document : A
- *
+ * Filename             : decoder-ts_rev-3.js
+ * Latest commit        : d9621906
+ * Protocol v2 document : Communication protocol V2 - P18-023 - TS v2.3.0.pdf
+
  * Release History
  *
- * 2021-11-09 revision 0
+ * 2020-10-14 revision 0
  * - Initial version
  *
- * 2023-12-13 revision 1
+ * 2021-09-15 revision 1
+ * - Break decoder into functions
+ * - Updated reboot info decoder
+ * - Added DecodeHexString to convert ASCII HEX string to byte string
+ *
+ * 2023-12-13 revision 2
  * - Added support of LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ *
+ * 2024-10-14 revision 3
+ * - Handle truncated payloads (e.g. due to max payload size depending on region and data rate)
  *
  * YYYY-MM-DD revision X
  *
@@ -30,6 +38,7 @@ if (typeof module !== 'undefined') {
     decode_uint8: decode_uint8,
     decode_int8: decode_int8,
     decode_reboot_info: decode_reboot_info,
+    decode_application_temperature: decode_application_temperature,
     from_hex_string: from_hex_string
   };
 }
@@ -43,7 +52,7 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
   message_type = bytes[0] & 0x0F;
 
   switch (decoded.header.protocol_version) {
-    case 1: { // protocol_version = 1
+    case 2: { // protocol_version = 2
       decoded.header.message_type = message_types_lookup_v2(message_type);
 
       var cursor = {}; // keeping track of which byte to process.
@@ -64,7 +73,7 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
         }
 
         case 3: { // Application event message
-          decoded.application_event = decode_application_event_msg(bytes, cursor)
+          decoded.application_event = decode_application_event_msg(bytes, cursor, decoded.header.protocol_version);
           break;
         }
 
@@ -83,19 +92,6 @@ function Decode(fPort, bytes) { // Used for ChirpStack (aka LoRa Network Server)
 
 function Decoder(obj, fPort) { // for The Things Network server
   return Decode(fPort, obj);
-}
-
-/**
- * LoRaWAN Payload Codec API Specification (TS013-1.0.0)
- */
-function decodeUplink(input) {
-  let result = {};
-  try {
-    result.data = Decode(input.fPort, input.bytes);
-  } catch (error) {
-    result.errors = [error.message];
-  }
-  return result;
 }
 
 /**
@@ -122,6 +118,19 @@ function from_hex_string(hex_string) {
       byte_string.push(parseInt(hex, 16));
   }
   return byte_string;
+}
+
+/**
+ * LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ */
+function decodeUplink(input) {
+  let result = {};
+  try {
+    result.data = Decode(input.fPort, input.bytes);
+  } catch (error) {
+    result.errors = [error.message];
+  }
+  return result;
 }
 
 // helper function to parse an 32 bit float
@@ -227,6 +236,25 @@ function uint32_to_hex(d) {
   return ('0000000' + (Number(d).toString(16).toUpperCase())).slice(-8);
 }
 
+// helper function to parse tt application temperature
+function decode_application_temperature(bytes, cursor, version) {
+  var temperature = {};
+
+  min = decode_int16(bytes, cursor) / 100;
+  max = decode_int16(bytes, cursor) / 100;
+  avg = decode_int16(bytes, cursor) / 100;
+
+  if (version == 2) {
+    temperature.min = min;
+    temperature.max = max;
+    temperature.avg = avg;
+  } else {
+    throw new Error("Invalid protocol version");
+  }
+
+  return temperature;
+}
+
 // helper function to parse reboot_info
 function decode_reboot_info(reboot_type, bytes, cursor) {
   var result;
@@ -324,16 +352,11 @@ function message_types_lookup_v2(type_id) {
   }
 }
 
-//https://docs.google.com/spreadsheets/d/1jBYUyNSFuDW65eaMB6TkMFg6F1rLXn-mgAp75D7A8ak/edit#gid=0
 function device_types_lookup_v2(type_id) {
   type_names = ["", // reserved
                 "ts",
                 "vs-qt",
-                "vs-mt",
-                "TT",
-                "vb",
-                "ld",
-                "cs"];
+                "vs-mt"];
   if (type_id < type_names.length) {
     return type_names[type_id];
   } else {
@@ -341,15 +364,21 @@ function device_types_lookup_v2(type_id) {
   }
 }
 
-function state_lookup(state_id) {
-  switch (state_id)
+function trigger_lookup_v2(trigger_id) {
+  switch (trigger_id)
   {
     case 0:
-      return "open";
+      return "timer";
     case 1:
-      return "closed";
+      return "condition_0";
+    case 2:
+      return "condition_1";
+    case 3:
+      return "condition_2";
+    case 4:
+      return "condition_3";
     default:
-      throw new Error("Invalid state");
+      return "unknown";
     }
 }
 
@@ -367,7 +396,7 @@ function decode_boot_msg(bytes, cursor) {
   var boot = {};
 
   var expected_length = 23;
-  if (bytes.length != expected_length) {
+  if (bytes.length != expected_length && bytes.length != 11) {
     throw new Error(
       "Invalid boot message length " +
       bytes.length +
@@ -382,19 +411,29 @@ function decode_boot_msg(bytes, cursor) {
 
   // byte[2..5]
   var version_hash = decode_uint32(bytes, cursor);
-  boot.version_hash = "0x" + uint32_to_hex(version_hash);
+  boot.version_hash = '0x' + uint32_to_hex(version_hash);
 
   // byte[6..7]
   var device_config_crc = decode_uint16(bytes, cursor);
-  boot.device_config_crc = "0x" + uint16_to_hex(device_config_crc);
+  boot.device_config_crc = '0x' + uint16_to_hex(device_config_crc);
 
   // byte[8..9]
   var application_config_crc = decode_uint16(bytes, cursor);
-  boot.application_config_crc = "0x" + uint16_to_hex(application_config_crc);
+  boot.application_config_crc = '0x' + uint16_to_hex(application_config_crc);
 
   // byte[10]
   var reset_flags = decode_uint8(bytes, cursor);
-  boot.reset_flags = "0x" + uint8_to_hex(reset_flags);
+  boot.reset_flags = '0x' + uint8_to_hex(reset_flags);
+
+  if (bytes.length == 11)
+  {
+    // truncated (DR0), fill in blanks
+    boot.reboot_counter = null;
+    boot.reboot_info = null;
+    boot.last_device_state = null;
+    boot.bist = null;
+    return boot; // don't continue
+  }
 
   // byte[11]
   boot.reboot_counter = decode_uint8(bytes, cursor);
@@ -410,43 +449,39 @@ function decode_boot_msg(bytes, cursor) {
 
   // byte[22]
   var bist = decode_uint8(bytes, cursor);
-  boot.bist = "0x" + uint8_to_hex(bist);
+  boot.bist = '0x' + uint8_to_hex(bist);
 
   return boot;
 }
 
-function decode_application_event_msg(bytes, cursor) {
+function decode_application_event_msg(bytes, cursor, version) {
   var application_event = {}
 
-  var expected_length = 3;
-  var expected_length_debug = 8;
-
-  if ((bytes.length != expected_length) && (bytes.length != expected_length_debug)) {
+  var expected_length = 9;
+  if (bytes.length != expected_length) {
     throw new Error(
       "Invalid application_event message length " +
       bytes.length +
       " instead of " +
-      expected_length + " or " +
-      expected_length_debug
+      expected_length
     );
   }
 
   // byte[1]
-  var state = decode_uint8(bytes, cursor);
-  application_event.state = state_lookup(state);
+  trigger = decode_uint8(bytes, cursor);
+  application_event.trigger = trigger_lookup_v2(trigger);
 
-  // byte[2]
-  application_event.state_transition_sequence = decode_uint8(bytes, cursor);
+  // byte[2..7]
+  application_event.temperature = {};
 
+  application_event.temperature = decode_application_temperature(bytes, cursor, version);
 
-  if (bytes.length > cursor.value) { // any debug values provided?
-    // byte[3]
-    application_event.debug = {};
-    application_event.debug.temperature = decode_int8(bytes, cursor);
-
-    // byte[4..7]
-    application_event.debug.magnet_magnitude = decode_uint32(bytes, cursor);
-  }
+  // byte[8]
+  conditions = decode_uint8(bytes, cursor);
+  application_event.condition_0 = (conditions & 1);
+  application_event.condition_1 = ((conditions >> 1) & 1);
+  application_event.condition_2 = ((conditions >> 2) & 1);
+  application_event.condition_3 = ((conditions >> 3) & 1);
 
   return application_event;
 }
@@ -455,7 +490,7 @@ function decode_device_status_msg(bytes, cursor) {
   var device_status = {};
 
   var expected_length = 18;
-  if (bytes.length != expected_length) {
+  if (bytes.length != expected_length && bytes.length != 11) {
     throw new Error(
       "Invalid device_status message length " +
       bytes.length +
@@ -466,14 +501,27 @@ function decode_device_status_msg(bytes, cursor) {
 
   // byte[1..2]
   var device_config_crc = decode_uint16(bytes, cursor);
-  device_status.device_config_crc = "0x" + uint16_to_hex(device_config_crc);
+  device_status.device_config_crc = '0x' + uint16_to_hex(device_config_crc);
 
   // byte[3..4]
   var application_config_crc = decode_uint16(bytes, cursor);
-  device_status.application_config_crc = "0x" + uint16_to_hex(application_config_crc);
+  device_status.application_config_crc = '0x' + uint16_to_hex(application_config_crc);
 
   // byte[5]
   device_status.event_counter = decode_uint8(bytes, cursor);
+
+  if (bytes.length == 11)
+  {
+    // truncated (DR0), fill in blanks
+    device_status.battery_voltage = {low: null, high: null, settle: null};
+    device_status.temperature = {min: null, max: null, avg: null};
+    device_status.tx_counter = null;
+    device_status.avg_rssi = null;
+    device_status.avg_snr = null;
+    return device_status; // don't continue
+  }
+
+
 
   // byte[6..11]
   device_status.battery_voltage = {};

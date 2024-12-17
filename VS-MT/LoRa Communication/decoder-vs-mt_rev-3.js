@@ -1,20 +1,23 @@
 /**
- * Filename          : decoder-vs-qt_doc-C_rev-2.js
- * Latest commit     : 618fa5c9
- * Protocol document : C
- *
+ * Filename             : decoder-vs-mt_rev-3.js
+ * Latest commit        : d9621906
+ * Protocol v2 document : Communication protocol V2 - P18-023 - VS-MT v2.2.pdf
+
  * Release History
  *
  * 2020-10-14 revision 0
  * - Initial version
  *
  * 2021-09-15 revision 1
- * - Break decoder into functionx
+ * - Break decoder into functions
  * - Updated reboot info decoder
  * - Added DecodeHexString to convert ASCII HEX string to byte string
  *
  * 2023-12-13 revision 2
  * - Added support of LoRaWAN Payload Codec API Specification (TS013-1.0.0)
+ *
+ * 2024-10-14 revision 3
+ * - Handle truncated payloads (e.g. due to max payload size depending on region and data rate)
  *
  * YYYY-MM-DD revision X
  *
@@ -379,12 +382,26 @@ function state_lookup_v2(state_id) {
     }
 }
 
+function detection_method_lookup_v2(method_id) {
+  switch (method_id)
+  {
+    case 0:
+      return "angle";
+    case 1:
+      return "magnitude";
+    default:
+      return "unknown";
+    }
+}
+
 function trigger_lookup_v2(trigger_id) {
   switch (trigger_id)
   {
     case 0:
       return "state_transition";
     case 1:
+      return "value_change";
+    case 2:
       return "timer";
     default:
       return "unknown";
@@ -405,7 +422,7 @@ function decode_boot_msg(bytes, cursor) {
   var boot = {};
 
   var expected_length = 25;
-  if (bytes.length != expected_length) {
+  if (bytes.length != expected_length && bytes.length != 11) {
     throw new Error(
       "Invalid boot message length " +
       bytes.length +
@@ -429,6 +446,18 @@ function decode_boot_msg(bytes, cursor) {
   // byte[8..9]
   var application_config_crc = decode_uint16(bytes, cursor);
   boot.application_config_crc = "0x" + uint16_to_hex(application_config_crc);
+
+  if (bytes.length == 11)
+  {
+    // truncated (DR0), fill in blanks
+    boot.calibration_crc = null;
+    boot.reset_flags = null;
+    boot.reboot_counter = null;
+    boot.reboot_info = null;
+    boot.last_device_state = null;
+    boot.bist = null;
+    return boot; // don't continue
+  }
 
   // byte[10..11]
   var calibration_crc = decode_uint16(bytes, cursor);
@@ -461,7 +490,7 @@ function decode_calibrated_msg(bytes, cursor) {
   var calibrated = {};
 
   var expected_length = 20;
-  if (bytes.length != expected_length) {
+  if (bytes.length != expected_length && bytes.length != 11) {
     throw new Error(
       "Invalid calibrated message length " +
       bytes.length +
@@ -475,6 +504,15 @@ function decode_calibrated_msg(bytes, cursor) {
   calibrated.calibration_vector.x = decode_int16(bytes, cursor);
   calibrated.calibration_vector.y = decode_int16(bytes, cursor);
   calibrated.calibration_vector.z = decode_int16(bytes, cursor);
+
+  if (bytes.length == 11)
+  {
+    // truncated (DR0), fill in blanks
+    calibrated.open_verification_vector = {x: null, y: null, z: null};
+    calibrated.closed_verification_vector = {x: null, y: null, z: null};
+    calibrated.temperature = null;
+    return calibrated; // don't continue
+  }
 
   // byte [7..12]
   calibrated.open_verification_vector = {};
@@ -498,7 +536,7 @@ function decode_not_calibrated_msg(bytes, cursor) {
   var not_calibrated = {};
 
   var expected_length = 21;
-  if (bytes.length != expected_length) {
+  if (bytes.length != expected_length && bytes.length != 11) {
     throw new Error(
       "Invalid not calibrated message length " +
       bytes.length +
@@ -519,6 +557,21 @@ function decode_not_calibrated_msg(bytes, cursor) {
     not_calibrated.calibration_vector.z = decode_int16(bytes, cursor);
   } else {
     cursor.value += 6;
+  }
+
+  if (bytes.length == 11)
+  {
+    // truncated (DR0), fill in blanks
+    if (reason_id.in(4,5,6,7)) {
+      not_calibrated.open_verification_vector = {x: null, y: null, z: null};
+    }
+    if (reason_id.in(7)) {
+      not_calibrated.closed_verification_vector = {x: null, y: null, z: null};
+    }
+    if (!reason_id.in(0)) {
+      not_calibrated.temperature = null;
+    }
+    return not_calibrated; // don't continue
   }
 
   // byte[8..13]
@@ -552,11 +605,12 @@ function decode_not_calibrated_msg(bytes, cursor) {
 function decode_application_event_msg(bytes, cursor) {
   var application_event = {};
 
-  var expected_length_with_debug = 5;
-  var expected_length_without_debug = 12;
+  var expected_length_without_debug = 7;
+  var expected_length_with_debug = 14;
   if (
     bytes.length != expected_length_without_debug &&
-    bytes.length != expected_length_with_debug
+    bytes.length != expected_length_with_debug &&
+    bytes.length != 11 // with debug, but truncated (DR0)
   ) {
     throw new Error(
       "Invalid application_event message length " +
@@ -569,9 +623,10 @@ function decode_application_event_msg(bytes, cursor) {
   }
 
   // byte[1]
-  var state_trigger = decode_uint8(bytes, cursor);
-  application_event.state = state_lookup_v2(state_trigger & 0x03);
-  application_event.trigger = trigger_lookup_v2(state_trigger >> 2);
+  var state_method_trigger = decode_uint8(bytes, cursor);
+  application_event.state = state_lookup_v2(state_method_trigger & 0x01);
+  application_event.detection_method = detection_method_lookup_v2((state_method_trigger & 0x02) >> 1);
+  application_event.trigger = trigger_lookup_v2(state_method_trigger >> 2);
 
   // byte[2]
   application_event.state_transition_sequence = decode_uint8(bytes, cursor);
@@ -579,14 +634,17 @@ function decode_application_event_msg(bytes, cursor) {
   // byte[3..4]
   application_event.angle = decode_int16(bytes, cursor) * 0.1;
 
-  if (bytes.length > cursor.value) {
+  // byte[5..6]
+ application_event.magnitude = decode_uint16(bytes, cursor) * 0.1;
+
+  if (bytes.length == expected_length_with_debug) {
     // any debug values provided?
     application_event.debug = {};
 
-    // byte[5]
+    // byte[7]
     application_event.debug.temperature = decode_int8(bytes, cursor);
 
-    // byte[6..11]
+    // byte[8..13]
     application_event.debug.vector = {};
     application_event.debug.vector.x = decode_int16(bytes, cursor);
     application_event.debug.vector.y = decode_int16(bytes, cursor);
@@ -600,7 +658,7 @@ function decode_device_status_msg(bytes, cursor) {
   var device_status = {};
 
   var expected_length = 21;
-  if (bytes.length != expected_length) {
+  if (bytes.length != expected_length && bytes.length != 11) {
     throw new Error(
       "Invalid device_status message length " +
       bytes.length +
@@ -627,6 +685,16 @@ function decode_device_status_msg(bytes, cursor) {
 
   // byte[8]
   device_status.unstable_counter = decode_uint8(bytes, cursor);
+
+  if (bytes.length == 11) {
+    // truncated (DR0), fill in blanks
+    device_status.battery_voltage = {low: null, high: null, settle: null};
+    device_status.temperature = {min: null, max: null, avg: null};
+    device_status.tx_counter = null;
+    device_status.avg_rssi = null;
+    device_status.avg_snr = null;
+    return device_status; // don't continue
+  }
 
   // byte[9..14]
   device_status.battery_voltage = {};

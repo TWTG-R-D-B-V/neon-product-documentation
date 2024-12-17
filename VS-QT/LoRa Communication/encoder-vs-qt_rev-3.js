@@ -1,7 +1,7 @@
 /**
- * Filename          : encoder-ts_doc-D_rev-3.js
- * Latest commit     : 618fa5c9
- * Protocol document : D
+ * Filename             : encoder-vs-qt_rev-3.js
+ * Latest commit        : 618fa5c9
+ * Protocol v2 document : Communication protocol V2 - P18-023 - VS-QT v2.2.pdf
  *
  * Release History
  *
@@ -30,11 +30,11 @@ if (typeof module !== 'undefined') {
     Encoder: Encoder,
     encodeDownlink: encodeDownlink,
     EncodeDeviceConfig: EncodeDeviceConfig, // used by generate_config_bin.py
-    EncodeTsAppConfig: EncodeTsAppConfig, // used by generate_config_bin.py
+    EncodeVsQtAppConfig: EncodeVsQtAppConfig, // used by generate_config_bin.py
     encode_header: encode_header,
-    encode_events_mode: encode_events_mode,
     encode_device_config: encode_device_config,
-    encode_ts_app_config: encode_ts_app_config,
+    encode_vsqt_app_config: encode_vsqt_app_config,
+    encode_config_switch_bitmask: encode_config_switch_bitmask,
     encode_device_config_switch: encode_device_config_switch,
     encode_device_type: encode_device_type,
     encode_uint32: encode_uint32,
@@ -66,9 +66,9 @@ function Encode(fPort, obj) { // Used for ChirpStack (aka LoRa Network Server)
         }
         case "application_configuration": { // Application message
           switch (obj.device_type) {
-            case "ts":
+            case "vs-qt":
               encode_header(bytes, 6, obj.header.protocol_version);
-              encode_ts_app_config(bytes, obj);
+              encode_vsqt_app_config(bytes, obj);
               encode_uint16(bytes, calc_crc(bytes.slice(1)));
 
               break;
@@ -167,53 +167,51 @@ function encode_device_config(bytes, obj) {
 }
 
 /**
- * TS application encoder
+ * VSQT application encoder
  */
-function EncodeTsAppConfig(obj) {
+function EncodeVsQtAppConfig(obj) {
   var bytes = [];
-  encode_ts_app_config(bytes, obj);
+  encode_vsqt_app_config(bytes, obj);
 
   return bytes;
 }
 
-function encode_ts_app_config(bytes, obj) {
+function encode_vsqt_app_config(bytes, obj) {
   if (typeof obj.bypassSanityCheck == "undefined")
   {
-    if (obj.device_type != "ts") {
+    if (obj.device_type != "vs-qt") {
       throw new Error( "Incorrect device type: " + obj.device_type);
     }
-    if (obj.temperature_measurement_interval_seconds < 1 || obj.temperature_measurement_interval_seconds > 28800) {
-      throw new Error( "temperature_measurement_interval_seconds is outside of specification: " + obj.temperature_measurement_interval_seconds);
+    if (obj.magnet_measurement_interval_seconds < 1 || obj.magnet_measurement_interval_seconds > 255) {
+      throw new Error( "magnet_measurement_interval_seconds is outside of specification: " + obj.magnet_measurement_interval_seconds);
     }
-    if (obj.periodic_event_message_interval < 0 || obj.periodic_event_message_interval > 28800) {
-      throw new Error( "periodic_event_message_interval is outside of specification: " + obj.periodic_event_message_interval);
+    if (obj.calibration_offset < -12.0 || obj.calibration_offset > 12.0) {
+      throw new Error( "calibration_offset is outside of specification: " + obj.calibration_offset);
     }
-    for (let i = 0; i < obj.events.length; i++) {
-      if (obj.events[i].threshold_temperature < -120.00 || obj.events[i].threshold_temperature > 120.00) {
-        throw new Error( "threshold_temperature[" + i + "] is outside of specification: " + obj.events[i].threshold_temperature);
-      }
-      if (obj.events[i].mode != "off") {
-        if (obj.events[i].measurement_window < 1 || obj.events[i].measurement_window > 144) {
-          throw new Error( "measurement_window[" + i + "] is outside of specification: " + obj.events[i].measurement_window);
-        }
-      }
+    if (obj.angle_threshold < 0 || obj.angle_threshold > 25.5) {
+      throw new Error( "angle_threshold is outside of specification: " + obj.angle_threshold);
+    }
+    if (obj.angle_hysteresis < 0 || obj.angle_hysteresis > 25.5) {
+      throw new Error( "angle_hysteresis is outside of specification: " + obj.angle_hysteresis);
+    }
+    if (obj.angle_stability_threshold < 0 || obj.angle_stability_threshold > 25.5) {
+      throw new Error( "angle_stability_threshold is outside of specification: " + obj.angle_stability_threshold);
+    }
+    if (obj.angle_stability_window < 1 || obj.angle_stability_window > 255) {
+      throw new Error( "angle_stability_window is outside of specification: " + obj.angle_stability_window);
+    }
+    if (obj.periodic_event_message_interval_seconds < 60 || obj.periodic_event_message_interval_seconds > 604800) {
+      throw new Error( "periodic_event_message_interval_seconds is outside of specification: " + obj.periodic_event_message_interval_seconds);
     }
   }
   encode_device_type(bytes, obj.device_type);
-  encode_uint16(bytes, obj.temperature_measurement_interval_seconds);   // Unit: s
-  encode_uint16(bytes, obj.periodic_event_message_interval);            // Unit: -
-  encode_events_mode(bytes, obj.events[0].mode);                        // Unit: -
-  encode_int16(bytes, obj.events[0].threshold_temperature * 100);       // Unit: 0.01'
-  encode_uint8(bytes, obj.events[0].measurement_window);                // Unit: -
-  encode_events_mode(bytes, obj.events[1].mode);                        // Unit: -
-  encode_int16(bytes, obj.events[1].threshold_temperature * 100);       // Unit: 0.01'
-  encode_uint8(bytes, obj.events[1].measurement_window);                // Unit: -
-  encode_events_mode(bytes, obj.events[2].mode);                        // Unit: -
-  encode_int16(bytes, obj.events[2].threshold_temperature * 100);       // Unit: 0.01'
-  encode_uint8(bytes, obj.events[2].measurement_window);                // Unit: -
-  encode_events_mode(bytes, obj.events[3].mode);                        // Unit: -
-  encode_int16(bytes, obj.events[3].threshold_temperature * 100);       // Unit: 0.01'
-  encode_uint8(bytes, obj.events[3].measurement_window);                // Unit: -
+  encode_uint8(bytes, obj.magnet_measurement_interval_seconds); // Unit: s
+  encode_int8(bytes, obj.calibration_offset * 10.0);            // Unit: 0.1'
+  encode_uint8(bytes, obj.angle_threshold * 10.0);              // Unit: 0.1'
+  encode_uint8(bytes, obj.angle_hysteresis * 10.0);             // Unit: 0.1'
+  encode_uint8(bytes, obj.angle_stability_threshold * 10.0);    // Unit: 0.1'
+  encode_uint8(bytes, obj.angle_stability_window);              // Unit: samples
+  encode_uint16(bytes, obj.periodic_event_message_interval_seconds / 60.0);  // Unit: minutes
 }
 
 /* Helper Functions *********************************************************/
@@ -245,26 +243,25 @@ function encode_device_type(bytes, type) {
   }
 }
 
-// helper function to encode event.mode
-function encode_events_mode(bytes, mode) {
-  switch (mode){
-    case 'above':
-      encode_uint8(bytes, 1);
-      break;
-    case 'below':
-      encode_uint8(bytes, 2);
-      break;
-    case 'increasing':
-      encode_uint8(bytes, 3);
-      break;
-    case 'decreasing':
-      encode_uint8(bytes, 4);
-      break;
-    case 'off':
-    default:
-      encode_uint8(bytes, 0);
-      break;
+// helper function to encode the config_switch_bitmask
+function encode_config_switch_bitmask(bytes, bitmask) {
+  var config_switch_bitmask = 0;
+  if (bitmask.use_confirmed_changed_message) {
+    config_switch_bitmask |= 1 << 0;
   }
+  if (bitmask.turn_on_debug_data) {
+    config_switch_bitmask |= 1 << 1;
+  }
+  if (bitmask.activate_magnetometer_stability_test_on_X_axis) {
+    config_switch_bitmask |= 1 << 2;
+  }
+  if (bitmask.activate_magnetometer_stability_test_on_Y_axis) {
+    config_switch_bitmask |= 1 << 3;
+  }
+  if (bitmask.activate_magnetometer_stability_test_on_Z_axis) {
+    config_switch_bitmask |= 1 << 4;
+  }
+  bytes.push(config_switch_bitmask & mask_byte);
 }
 
 // helper function to encode the device switch_mask
@@ -272,6 +269,9 @@ function encode_device_config_switch(bytes, bitmask) {
   var config_switch_mask = 0;
   if (bitmask.enable_confirmed_event_message) {
     config_switch_mask |= 1 << 0;
+  }
+  if (bitmask.enable_debug_data) {
+    config_switch_mask |= 1 << 1;
   }
   bytes.push(config_switch_mask & mask_byte);
 }
