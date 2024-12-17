@@ -335,13 +335,10 @@ function encode_sensor_config(bytes, obj) {
     if(obj.events[i].mode == "increasing" || obj.events[i].mode == "decreasing"){
       // Mode 3 and 4 (increasing and decreasing) only support positive number, while ...
       if(obj.events[i].threshold_temperature < -2120){
-        console.log("L319");
         throw new Error("threshold is below supported value1");
       }
     } else if(obj.events[i].threshold_temperature < -270){
       // Mode 0, 1, and 2 (off, above, below) support threshold down to -270
-      console.log("L324");
-      console.log(obj.events[i].mode);
       throw new Error("threshold is below supported value2");
     }
   }

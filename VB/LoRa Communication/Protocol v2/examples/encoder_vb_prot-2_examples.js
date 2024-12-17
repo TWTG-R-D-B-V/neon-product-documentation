@@ -1,37 +1,20 @@
 var encoder = require('../encoder_vb_rev-10.js');
 
-var baseEU868 = {
+var base = {
   "header": { "message_type": "base_configuration", "protocol_version": 2 },
   "switch_mask": {
-    "enable_confirmed_event_message": true,
+    "enable_confirmed_event_message": false,
     "enable_confirmed_data_message": false,
     "allow_deactivation": true
   },
   "communication_max_retries": 3,
-  "unconfirmed_repeat": 1,
+  "number_of_unconfirmed_messages": 1,
   "periodic_message_random_delay_seconds": 60,
   "status_message_interval_seconds": 86400,
   "status_message_confirmed_interval": 1,
-  "lora_failure_holdoff_count": 2,
+  "lora_failure_holdoff_count": 5,
   "lora_system_recover_count": 1,
-  "lorawan_fsb_mask": ["0x0000", "0x0000", "0x0000", "0x0000", "0x0000"]
-};
-
-var baseUS915 = {
-  "header": { "message_type": "base_configuration", "protocol_version": 2 },
-  "switch_mask": {
-    "enable_confirmed_event_message": true,
-    "enable_confirmed_data_message": false,
-    "allow_deactivation": true
-  },
-  "communication_max_retries": 3,
-  "unconfirmed_repeat": 1,
-  "periodic_message_random_delay_seconds": 60,
-  "status_message_interval_seconds": 86400,
-  "status_message_confirmed_interval": 1,
-  "lora_failure_holdoff_count": 2,
-  "lora_system_recover_count": 1,
-  "lorawan_fsb_mask": ["0x00FF", "0x0000", "0x0000", "0x0000", "0x0000"]
+  "lorawan_fsb_mask": ["0x00FF", "0x0000", "0x0000", "0x0000", "0x0001"]
 };
 
 var sensorConfigDefault = {
@@ -324,8 +307,7 @@ function encode(tag, object) {
 
 
 console.log("##### Encoding")
-encode("Base config message (EU868)", baseEU868);
-encode("Base config message (US915)", baseUS915);
+encode("Base config message", base);
 encode("Sensor config message (default)", sensorConfigDefault);
 encode("Sensor config message (alternative)", sensorConfigAlternative);
 encode("Sensor data config message (default)", sensorDataConfigDefault);

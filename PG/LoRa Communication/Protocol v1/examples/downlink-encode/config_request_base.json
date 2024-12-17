@@ -88,7 +88,7 @@
           "tag": "0xAABBCCDD",
           "payload": {
             "switch_mask": {
-              "enable_confirmed_event_message": true,
+              "enable_confirmed_event_message": false,
               "enable_confirmed_data_message": true,
               "allow_deactivation": false
             },

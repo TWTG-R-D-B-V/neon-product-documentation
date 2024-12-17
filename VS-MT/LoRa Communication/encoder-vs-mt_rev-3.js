@@ -1,7 +1,7 @@
 /**
- * Filename          : encoder-vs-mt_doc-D_rev-3.js
- * Latest commit     : 618fa5c9
- * Protocol document : D
+ * Filename             : encoder-vs-mt_rev-3.js
+ * Latest commit        : 618fa5c9
+ * Protocol v2 document : Communication protocol V2 - P18-023 - VS-MT v2.2.pdf
  *
  * Release History
  *

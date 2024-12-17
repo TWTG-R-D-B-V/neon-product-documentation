@@ -7,7 +7,7 @@ var baseConfigDefault = {
     "tag": "0x096c4970",
     "payload": {
       "switch_mask": {
-        "enable_confirmed_event_message": true,
+        "enable_confirmed_event_message": false,
         "enable_confirmed_data_message": true,
         "allow_deactivation": true
       },
@@ -28,7 +28,7 @@ var baseConfigAlternative = {
     "tag": "0x00000000",
     "payload": {
       "switch_mask": {
-        "enable_confirmed_event_message": true,
+        "enable_confirmed_event_message": false,
         "enable_confirmed_data_message": false,
         "allow_deactivation": true
       },
