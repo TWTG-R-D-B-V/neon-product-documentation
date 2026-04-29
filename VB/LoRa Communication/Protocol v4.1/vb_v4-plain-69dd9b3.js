@@ -686,7 +686,7 @@ recvTime // eslint-disable-line @typescript-eslint/no-unused-vars
     else {
         context.amplitude_index++;
         if (context.amplitude_index >= context.amplitudes.length) {
-            throw new Error("Frequency index out of bounds: ".concat(context.amplitude_index, " >= ").concat(context.amplitudes.length));
+            throw new Error("Amplitude index out of bounds: ".concat(context.amplitude_index, " >= ").concat(context.amplitudes.length));
         }
     }
     return context.amplitudes[context.amplitude_index];
@@ -801,7 +801,7 @@ var TypeCodec_TypeCodec = /** @class */ (function () {
                 value = parseInt(value);
             }
             if (typeof value !== 'number') {
-                throw new Error("Integer value must a number");
+                throw new Error("Integer value must be a number");
             }
             var isUnsigned = intMatch[1] === 'u';
             var numberOfBits = parseInt(intMatch[2]);
